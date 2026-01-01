@@ -69,11 +69,11 @@ graphical.comparation <- function(imputed.data, imputed.pos, x, y) {
 
   p2 <- ggplot(imputed.data, aes(x = .data[[x]], fill = type)) +
     geom_density(alpha = 0.5) +
-    scale_fill_manual(values = c("Real"="#003366", "Imputed"="#9B1B30"))
+    scale_fill_manual(values = c("Real" = "#003366", "Imputed" = "#9B1B30"))
 
   p3 <- ggplot(imputed.data, aes(x = .data[[y]], fill = type)) +
     geom_density(alpha = 0.5) +
-    scale_fill_manual(values = c("Real"="#003366", "Imputed"="#9B1B30"))
+    scale_fill_manual(values = c("Real" = "#003366", "Imputed" = "#9B1B30"))
 
   c(p1/(p2|p3))
 }

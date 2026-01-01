@@ -2,11 +2,12 @@
 data.analysis <- readRDS("data/intermediate/data analysis.rds")
 
 cor.data <- data.analysis |> dplyr::select(!c(sample, class))
-corr_Kvalue <- cor(cor.data)["K value", ]
+corr_Kvalue <- cor(cor.data)["K value",]
 
-sort(abs(corr_Kvalue), decreasing = TRUE)
+top.cor <- sort(abs(corr_Kvalue), decreasing = TRUE)
+top.cor <- head(top.cor, 10)
 
-data.cluster <- data.analysis |> dplyr::select(`1373`, class)
+data.cluster <- data.analysis |> dplyr::select(grep("^[[:digit:]]*$", names(top.cor), value = TRUE), class)
 
 task <- TaskClassif$new(
   id = "Classification original data",
@@ -29,6 +30,8 @@ knn <- lrn(
 search_space <- ps(
   k = p_int(3, 10)
 )
+
+set.seed(123)
 
 at_knn <- AutoTuner$new(
   learner = knn,
@@ -74,7 +77,6 @@ data.cluster.undersample <- undersample(data.cluster, "class", "deteriorato")
 
 table(data.cluster.undersample$class)
 
-
 task <- TaskClassif$new(
   id = "Classification original data",
   backend = data.cluster.undersample,
@@ -82,7 +84,6 @@ task <- TaskClassif$new(
   positive = "fresco"
 )
 
-task
 task$col_roles$stratum <- "class"
 
 lda <- lrn("classif.lda", predict_type = "prob")
@@ -97,6 +98,8 @@ knn <- lrn(
 search_space <- ps(
   k = p_int(3, 10)
 )
+
+set.seed(123)
 
 at_knn <- AutoTuner$new(
   learner = knn,
