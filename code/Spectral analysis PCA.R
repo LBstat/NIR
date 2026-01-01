@@ -10,7 +10,7 @@ summary(pca.res)
 pca.df <- data.frame(
   PC1 = pca.res$x[, 1],
   PC2 = pca.res$x[, 2],
-  class = as.factor(data.analysis$class)
+  class = data.analysis$class
 )
 
 p1 <- ggplot(pca.df, aes(x = PC1, y = PC2, colour = class)) +
@@ -71,23 +71,15 @@ at_knn <- AutoTuner$new(
   terminator = trm("evals", n_evals = 30)
 )
 
-measures <- list(
-  msr("classif.acc"),
-  msr("classif.auc"),
-  msr("classif.ce"),
-  msr("classif.sensitivity"),
-  msr("classif.specificity")
-)
-
 resampling_outer <- rsmp("cv", folds = 10)
 resampling_outer$instantiate(task)
 
-# kNN tuned
-rr_knn <- resample(task, at_knn, resampling_outer, store_models = TRUE)
+# k-NN tuned
+rr_knn <- mlr3::resample(task, at_knn, resampling_outer, store_models = TRUE)
 
 # LDA e QDA
-rr_lda <- resample(task, lda, resampling_outer, store_models = TRUE)
-rr_qda <- resample(task, qda, resampling_outer, store_models = TRUE)
+rr_lda <- mlr3::resample(task, lda, resampling_outer, store_models = TRUE)
+rr_qda <- mlr3::resample(task, qda, resampling_outer, store_models = TRUE)
 
 measures <- list(
   msr("classif.acc"),
@@ -97,7 +89,7 @@ measures <- list(
   msr("classif.specificity")
 )
 
-# kNN
+# k-NN
 rr_knn$aggregate(measures)
 
 # LDA
@@ -113,22 +105,6 @@ rr_qda$score()
 pca.oversample <- oversample.with.noise(pca.df, "class", "fresco")
 
 table(pca.oversample$class)
-
-p2 <- ggplot(pca.oversample, aes(x = PC1, y = PC2, colour = class)) +
-  geom_point(alpha = 0.8, size = 2.5) +
-  scale_color_manual(values = c("fresco" = "#003366", "deteriorato" = "#9B1B30")) +
-  labs(
-    title = "PCA sugli spettri",
-    x = paste0("PC1 (", round(summary(pca.res)$importance[2, 1] *100, 1), "%)"),
-    y = paste0("PC2 (", round(summary(pca.res)$importance[2, 2] *100, 1), "%)"),
-    color = "Freschezza"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
-    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-    panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
-    panel.grid.minor = element_blank())
 
 task <- TaskClassif$new(
   id = "Classification on PCA oversample",
@@ -165,12 +141,12 @@ at_knn <- AutoTuner$new(
 resampling_outer <- rsmp("cv", folds = 5)
 resampling_outer$instantiate(task)
 
-# kNN tuned
-rr_knn <- resample(task, at_knn, resampling_outer, store_models = TRUE)
+# k-NN tuned
+rr_knn <- mlr3::resample(task, at_knn, resampling_outer, store_models = TRUE)
 
 # LDA e QDA
-rr_lda <- resample(task, lda, resampling_outer, store_models = TRUE)
-rr_qda <- resample(task, qda, resampling_outer, store_models = TRUE)
+rr_lda <- mlr3::resample(task, lda, resampling_outer, store_models = TRUE)
+rr_qda <- mlr3::resample(task, qda, resampling_outer, store_models = TRUE)
 
 measures <- list(
   msr("classif.acc"),
@@ -180,7 +156,7 @@ measures <- list(
   msr("classif.specificity")
 )
 
-# kNN
+# k-NN
 rr_knn$aggregate(measures)
 
 # LDA
@@ -196,22 +172,6 @@ rr_qda$score()
 pca.undersample <- undersample(pca.df, "class", "deteriorato")
 
 table(pca.undersample$class)
-
-p3 <- ggplot(pca.undersample, aes(x = PC1, y = PC2, colour = class)) +
-  geom_point(alpha = 0.8, size = 2.5) +
-  scale_color_manual(values = c("fresco" = "#003366", "deteriorato" = "#9B1B30")) +
-  labs(
-    title = "PCA sugli spettri",
-    x = paste0("PC1 (", round(summary(pca.res)$importance[2, 1] *100, 1), "%)"),
-    y = paste0("PC2 (", round(summary(pca.res)$importance[2, 2] *100, 1), "%)"),
-    color = "Freschezza"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
-    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-    panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
-    panel.grid.minor = element_blank())
 
 task <- TaskClassif$new(
   id = "Classification on PCA undersample",
@@ -248,12 +208,12 @@ at_knn <- AutoTuner$new(
 resampling_outer <- rsmp("cv", folds = 5)
 resampling_outer$instantiate(task)
 
-# kNN tuned
-rr_knn <- resample(task, at_knn, resampling_outer, store_models = TRUE)
+# k-NN tuned
+rr_knn <- mlr3::resample(task, at_knn, resampling_outer, store_models = TRUE)
 
 # LDA e QDA
-rr_lda <- resample(task, lda, resampling_outer, store_models = TRUE)
-rr_qda <- resample(task, qda, resampling_outer, store_models = TRUE)
+rr_lda <- mlr3::resample(task, lda, resampling_outer, store_models = TRUE)
+rr_qda <- mlr3::resample(task, qda, resampling_outer, store_models = TRUE)
 
 measures <- list(
   msr("classif.acc"),
@@ -263,7 +223,7 @@ measures <- list(
   msr("classif.specificity")
 )
 
-# kNN
+# k-NN
 rr_knn$aggregate(measures)
 
 # LDA

@@ -67,5 +67,5 @@ data.analysis$class <- ifelse(data.analysis$`K value` < 0.2, "molto fresco",
                               ifelse(data.analysis$`K value` <= 0.4, "fresco",
                                      ifelse(data.analysis$`K value` <= 0.6, "deteriorato", "non commerciabile")))
 
-table(data.analysis$class)
+data.analysis$class <- as.factor(data.analysis$class)
 saveRDS(data.analysis, file = "data/intermediate/data analysis.rds")
