@@ -12,6 +12,6 @@ aimes to verify if Nir is a valid instrument to classify fresh meats correctly.
 
 ## Plots
 
-![](plot/imputation_7_K value.png)
+![](plot/imputation_7_Kvalue.png)
 ![](plot/densities1.png)
 ![](plot/densities2.png)
