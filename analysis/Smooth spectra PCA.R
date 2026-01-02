@@ -8,7 +8,7 @@ smoothed.spectra <- smoothing(data.spectra)
 
 norm.spectra <- t(apply(smoothed.spectra, MARGIN = 1, FUN = normalization))
 
-pca.res <- prcomp(norm.spectra, center = TRUE, scale. = FALSE)
+pca.res <- prcomp(norm.spectra, center = FALSE, scale. = FALSE)
 summary(pca.res)
 
 pca.df <- data.frame(

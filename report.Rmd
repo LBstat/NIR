@@ -3,3 +3,105 @@ title: "report"
 output: html_document
 ---
 
+# **Introduction**
+
+### *Introduction and study objectives*
+
+### *Main objectives*
+
+# **Data analysis**
+
+### *Data preparation and pre-processing*
+
+```{r analysis.1, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
+source("settings.R")
+source("source_all.R")
+
+if (!file.exists("data/intermediate/data analysis.rds")) {
+  build_data_main()
+}
+
+data.analysis <- readRDS("data/intermediate/data analysis.rds")
+
+knitr::include_graphics("plot/densities1.png")
+knitr::include_graphics("plot/densities2.png")
+knitr::include_graphics("plot/imputation_7_K value.png")
+
+data.imputed <- readRDS("data/intermediate/data imputated.rds")
+```
+
+- large dataset, 5 measure position equivalent to each other (as seen in the hraphic, densities have are not symmetric), aggregation through median sample value. 
+- variables used for imputation not normal (kolmogorov-smirnov test), so pmm best imputation method
+- missing values (MAR) - imputation of missing trhough predictive mean matching (10 dataset imputaed, best dataset choosen - see graphic, imputed values for k-value overlapping the best)
+- spectral measures aggregated through median 
+- classification of samples thanks to kvalue - very fresh, fresh, deteriorated, very deteriorated
+
+### *Correlation vs. feature selection*
+
+```{r analysis.2, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
+cor.data <- data.analysis |> dplyr::select(!c(sample, class))
+corr_Kvalue <- cor(cor.data)["K value",]
+
+top.cor <- sort(abs(corr_Kvalue), decreasing = TRUE)
+(top.cor <- head(top.cor, 10))
+
+data.cluster <- data.analysis |> dplyr::select(grep("^[[:digit:]]*$", names(top.cor), value = TRUE), class)
+
+task <- TaskClassif$new(
+  id = "Classification original data",
+  backend = data.cluster,
+  target = "class",
+  positive = "fresco"
+)
+
+task$col_roles$stratum <- "class"
+
+if (!file.exists("data/results/results correlation.rds")) {
+  cor.analysis(task)
+}
+
+results.cor <- readRDS("data/results/results correlation.rds")
+
+```
+
+```{r analysis.3, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
+data.cluster <- data.analysis |> dplyr::select(grep("^[[:digit:]]*$", colnames(data.analysis), value = TRUE))
+colnames(data.cluster) <- paste0("V", colnames(data.cluster))
+
+data.cluster <- bind_cols(data.cluster, class = data.analysis$class)
+
+task <- TaskClassif$new(
+  id = "Classification original data",
+  backend = data.cluster,
+  target = "class",
+  positive = "fresco"
+)
+
+task$col_roles$stratum <- "class"
+
+top.features <- feature.selection(task)
+
+data.cluster <- data.cluster |> dplyr::select(top.features, class)
+
+task <- TaskClassif$new(
+  id = "Classification original data",
+  backend = data.cluster,
+  target = "class",
+  positive = "fresco"
+)
+
+task$col_roles$stratum <- "class"
+
+if (!file.exists("data/results/results auc.rds")) {
+  auc.analysis(task)
+}
+
+results.auc <- readRDS("data/results/results auc.rds")
+```
+
+### *QDA, LDA and k-NN on (smoothed) PCA components*
+
+### *Support vector machines*
+
+## **Results**
+

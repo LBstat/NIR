@@ -1,7 +1,7 @@
 
 # Function that performs Shapiro Wilk Normality Test on each numerical column of a given
 # data frame. The histogram of the data and the theoretical normality density curve are plotted.
-multivariable.normality.test <- function(data) {
+multivariable.normality.test <- function(data, out_dir = "plot/", save = TRUE, print = FALSE) {
   assertDataFrame(data, types = "numeric")
 
   for (i in seq_len(ncol(data))) {
@@ -10,11 +10,13 @@ multivariable.normality.test <- function(data) {
 
     p_val <- shapiro.test(vec)$p.value
 
-    if (p_val <= 0.05) {
-      cat("H0 rejected for variable", var.name, "\n")
-    } else {
-      cat("H0 not rejected for variable", var.name, "\n")
-    }
+    if (print) {
+      if (p_val <= 0.05) {
+        cat("H0 rejected for variable", var.name, "\n")
+        } else {
+          cat("H0 not rejected for variable", var.name, "\n")
+        }
+      }
 
     # Compute mean and standard deviation
     mu <- mean(vec, na.rm = TRUE)
@@ -28,7 +30,7 @@ multivariable.normality.test <- function(data) {
       stat_function(fun = dnorm, args = list(mean = mu, sd = sigma), color = "#9B1B30", size = 1) +
       labs(title = "Histogram with Normal Density Curve",
            x = paste0(var.name),
-           y = "Density") +
+           y = "density") +
       theme_minimal() +
       theme(
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
@@ -36,7 +38,17 @@ multivariable.normality.test <- function(data) {
         panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
         panel.grid.minor = element_blank())
 
-    print(p)
+    if (save) {
+      filename <- paste0("normality_check_col", i, ".png")
+      ggsave(
+        filename = file.path(out_dir, filename),
+        plot = p,
+        width = 12,
+        height = 6,
+        dpi = 300
+      )
+    }
+    invisible(p)
   }
 }
 
