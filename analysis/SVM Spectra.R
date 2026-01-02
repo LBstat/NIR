@@ -15,27 +15,5 @@ task <- TaskClassif$new(
 
 task$col_roles$stratum <- "class"
 
-res1 <- tune_svm(task, resampling_folds = 5, n_evals = 50, measure_prob = "classif.acc")
-res1$accuracy
-res1$confusion_matrix
-res1$best_params
+tune_svm(task, resampling_folds = 5, n_evals = 30, measure_prob = "classif.acc")
 
-head(res1$probability)
-
-svm.undersample <- undersample(data.svm, "class", "deteriorato")
-
-task <- TaskClassif$new(
-  id = "SVM",
-  backend = svm.undersample,
-  target = "class",
-  positive = "fresco"
-)
-
-task$col_roles$stratum <- "class"
-
-res2 <- tune_svm(task, resampling_folds = 5, n_evals = 50, measure_prob = "classif.acc")
-res2$accuracy
-res2$confusion_matrix
-res2$best_params
-
-head(res2$probability)

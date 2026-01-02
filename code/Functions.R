@@ -40,96 +40,6 @@ multivariable.normality.test <- function(data) {
   }
 }
 
-# Function that compares the imputed values with the original distributions
-graphical.comparation <- function(imputed.data, imputed.pos, x, y) {
-  assertDataFrame(imputed.data, types = "numeric")
-  assertInteger(imputed.pos, lower = 1, any.missing = FALSE)
-  assertString(x)
-  assertString(y)
-  assertSubset(x, colnames(imputed.data))
-  assertSubset(y, colnames(imputed.data))
-
-  imputed.data$type <- "Real"
-  imputed.data$type[imputed.pos] <- "Imputed"
-
-  p1 <- ggplot(imputed.data , aes(x = .data[[x]], y = .data[[y]], color = type)) +
-    geom_point(alpha = 0.8, size = 2.5) +
-    scale_color_manual(values = c("Real" = "#003366", "Imputed" = "#9B1B30")) +
-    geom_smooth(method = "gam", se = TRUE, color = "black") +
-    labs(title = "Imputed dataset",
-         x = paste0(x),
-         y = paste0(y),
-         color = "Type") +
-    theme_minimal() +
-    theme(
-      axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
-      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-      panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
-      panel.grid.minor = element_blank())
-
-  p2 <- ggplot(imputed.data, aes(x = .data[[x]], fill = type)) +
-    geom_density(alpha = 0.5) +
-    scale_fill_manual(values = c("Real" = "#003366", "Imputed" = "#9B1B30"))
-
-  p3 <- ggplot(imputed.data, aes(x = .data[[y]], fill = type)) +
-    geom_density(alpha = 0.5) +
-    scale_fill_manual(values = c("Real" = "#003366", "Imputed" = "#9B1B30"))
-
-  c(p1/(p2|p3))
-}
-
-# Function that oversamples form the unbalanced class adding noise to the numerical columns
-oversample.with.noise <- function(data, target.col, minority.class, factor = 1, noise.sd = 0.01) {
-  assertDataFrame(data)
-  assertString(target.col)
-  assertSubset(target.col, choices = colnames(data))
-  assertString(minority.class)
-  assertSubset(minority.class, choices = levels(data[[target.col]]))
-  assertNumber(factor, lower = 1)
-  assertNumber(noise.sd, lower = 0)
-
-  minority <- data[data[[target.col]] == minority.class,]
-  majority <- data[data[[target.col]] != minority.class,]
-
-  # Number of observations to oversample
-  n.new <- (nrow(majority) - nrow(minority)) * factor
-
-  # Bootstraping form minority class
-  set.seed(123)
-  sampled <- minority[sample(1:nrow(minority), n.new, replace = TRUE), ]
-
-  # Noise added to numeric columns
-  num.cols <- sapply(sampled, is.numeric)
-  sampled[, num.cols] <- sampled[, num.cols] + matrix(rnorm(n.new * sum(num.cols), mean = 0, sd = noise.sd), nrow = n.new)
-
-  # New data = old data + oversampled rows
-  new.data <- rbind(majority, minority, sampled)
-  new.data
-}
-
-# Function that undersamples from the class with more observations
-undersample <- function(data, target.col, majority.class) {
-  assertDataFrame(data)
-  assertString(target.col)
-  assertSubset(target.col, choices = colnames(data))
-  assertString(majority.class)
-  assertSubset(majority.class, choices = levels(data[[target.col]]))
-
-  majority <- data[data[[target.col]] == majority.class, ]
-  minority <- data[data[[target.col]] != majority.class, ]
-
-  # Sample majority to match minority
-  set.seed(123)
-  majority.sampled <- majority[sample(1:nrow(majority), nrow(minority)), ]
-
-  # Combine with minority
-  new.data <- rbind(minority, majority.sampled)
-
-  # Shuffle rows
-  new.data <- new.data[sample(1:nrow(new.data)), ]
-  new.data
-}
-
 # Function that performs linear smoothing. Derivatives obtained by setting m != 0
 smoothing <- function(data, window = 11, poly = 2, m = 0) {
   assertDataFrame(data, types = "numeric")
@@ -139,7 +49,7 @@ smoothing <- function(data, window = 11, poly = 2, m = 0) {
 
   if (window %% 2 != 1) stop("window must be odd")
 
-  smoothed <- t(apply(data, 1, function(x) sgolayfilt(x, p = poly, n = window, m = m)))
+  smoothed <- t(apply(data, MARGIN = 1, function(x) sgolayfilt(x, p = poly, n = window, m = m)))
   as.data.frame(smoothed)
 }
 
@@ -149,71 +59,3 @@ normalization <- function(x) {
 
   (x - mean(x)) / sd(x)
 }
-
-tune_svm <- function(task, resampling.folds = 5, n.evals = 50, measure.prob = "classif.auc") {
-  assert_task(task, task_type = "classif")
-  assertNumber(resampling.folds, lower = 5)
-  assertNumber(n.evals, lower = 30)
-  assertString(measure.prob)
-  assertSubset(measure.prob, choices = grep("^classif\\..*", measure.prob, value = TRUE))
-
-  # Definisco il learner SVM con probabilità
-  learner = lrn("classif.svm", type = "C-classification", predict_type = "prob")
-
-  # Spazio di iperparametri
-  param.space <- ps(
-    kernel = p_fct(c("radial", "polynomial", "sigmoid")),
-    cost = p_dbl(lower = 0.1, upper = 10, logscale = TRUE),
-    gamma = p_dbl(lower = 0.001, upper = 1, logscale = TRUE)
-  )
-
-  # Tuner (ricerca casuale)
-  tuner = tnr("random_search", batch_size = 10)
-
-  # Resampling cross-validation
-  resampling = rsmp("cv", folds = resampling.folds)
-
-  # AutoTuner
-  set.seed(123)
-  at = AutoTuner$new(
-    learner = learner,
-    resampling = resampling,
-    measure = msr(measure.prob),
-    search_space = param.space,
-    terminator = trm("evals", n_evals = n.evals),
-    tuner = tuner
-  )
-
-  # Addestramento
-  at$train(task)
-
-  # Predizioni
-  prediction = at$predict(task)
-
-  # Calcolo probabilità e classi predette
-  prob <- prediction$prob
-  pred.class <- prediction$response
-
-  # Metriche classiche
-  conf.mat <- table(Predicted = pred_class, True = task$truth())
-  accuracy <- sum(diag(conf_mat)) / sum(conf_mat)
-
-  # Performance probabilistica
-  prob.measure <- prediction$score(msr(measure.prob))
-
-  # Parametri ottimali
-  best.params <- at$archive$best()$x_domain[[1]]
-
-  # Output completo
-  list(
-    model = at,
-    prediction = prediction,
-    probability = prob,
-    predicted_class = pred.class,
-    confusion_matrix = conf.mat,
-    accuracy = accuracy,
-    prob_performance = prob.measure,
-    best_params = best.params
-  )
-}
-
