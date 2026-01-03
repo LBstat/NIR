@@ -56,18 +56,26 @@ multivariable.normality.test <- function(data, out_dir = "plot/", save = TRUE, p
 smoothing <- function(data, window = 11, poly = 2, m = 0) {
   assertDataFrame(data, types = "numeric")
   assertNumber(window)
-  assertNumber(poly)
+  assertNumber(poly, lower = 1)
   assertNumber(m, lower = 0)
 
   if (window %% 2 != 1) stop("window must be odd")
 
-  smoothed <- t(apply(data, MARGIN = 1, function(x) sgolayfilt(x, p = poly, n = window, m = m)))
-  as.data.frame(smoothed)
+  # Store names
+  orig_names <- colnames(data)
+  
+  # Perform smoothing
+  smoothed <- t(apply(data, 1, function(x) sgolayfilt(x, p = poly, n = window, m = m)))
+  
+  # Convert back to data frame and RE-ASSIGN NAMES
+  smoothed_df <- as.data.frame(smoothed)
+  colnames(smoothed_df) <- orig_names
+  smoothed_df
 }
 
 # Function to normalize single numeric vectors
 normalization <- function(x) {
   assertNumeric(x, any.missing = FALSE)
-
+  
   (x - mean(x)) / sd(x)
 }

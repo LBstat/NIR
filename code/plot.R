@@ -3,12 +3,15 @@
 graphical.comparation <- function(imputed_data, imputed_pos, x, y, x_ignore = FALSE, y_ignore = FALSE, dataset_id = NULL, 
   out_dir = "plot/", save = TRUE) {
 
+  # Assertions
   assertDataFrame(imputed_data, types = "numeric")
   assertInteger(imputed_pos, lower = 1, any.missing = FALSE)
   assertString(x)
   assertString(y)
   assertSubset(x, colnames(imputed_data))
   assertSubset(y, colnames(imputed_data))
+  assertString(out_dir)
+  assertFlag(save)
 
   imputed_data$type <- "real"
   imputed_data$type[imputed_pos] <- "imputed"
@@ -73,13 +76,17 @@ graphical.comparation <- function(imputed_data, imputed_pos, x, y, x_ignore = FA
       dpi = 300
     )
   }
+
   invisible(p)
 }
 
 # Function that compares density distributions. DataFrame must be in long format.
 density.comparation <- function(data, out_dir = "plot/", save = TRUE) {
 
+  # Assertions
   assertDataFrame(data)
+  assertString(out_dir)
+  assertFlag(save)
 
   p <- ggplot(data, aes(x = valore, color = variabile, fill = variabile)) +
     geom_density(alpha = 0.3) +
@@ -118,5 +125,66 @@ density.comparation <- function(data, out_dir = "plot/", save = TRUE) {
       )
     }
   }
+
+  invisible(p)
+}
+
+plot_spectral_comparison <- function(raw_data, smoothed_data, n_samples = 5, out_dir = "plot/", save = TRUE) {
+
+  # Assertions
+  assertDataFrame(raw_data)
+  assertDataFrame(smoothed_data)
+  assertString(out_dir)
+  assertFlag(save)
+
+  # Random selecting rows
+  set.seed(123)
+  sample_ids <- sample(seq_len(nrow(raw_data)), n_samples)
+  
+  # Add an ID column and pivot both to long format
+  prepare_long <- function(df, type_label) {
+    df |> mutate(sample_id = as.factor(row_number())) |>
+      dplyr::filter(sample_id %in% sample_ids) |>
+      pivot_longer(cols = -sample_id, names_to = "wavelength", values_to = "intensity") |>
+      mutate(wavelength = as.numeric(str_extract(wavelength, pattern = "[0-9]+")), type = type_label)
+  }
+
+  df_raw <- prepare_long(raw_data, "raw")
+  df_smooth <- prepare_long(smoothed_data, "smoothed")
+  
+  # Combine datasets
+  df_plot <- bind_rows(df_raw, df_smooth)
+  
+  # Create the plot
+  p <- ggplot(df_plot, aes(x = wavelength, y = intensity, color = type, alpha = type)) +
+    geom_line(aes(group = interaction(sample_id, type)), size = 0.8) +
+    facet_wrap(~sample_id, scales = "free_y") +
+    scale_alpha_manual(values = c("raw" = 0.4, "smoothed" = 1)) +
+    scale_color_manual(values = c("raw" = "#003366", "smoothed" = "#9B1B30")) +
+    labs(
+      title = "Spectral Smoothing Comparison (Savitzky-Golay)",
+      subtitle = paste("Showing", n_samples, "randomly selected spectra"),
+      x = "wavelength / wavenumber",
+      y = "absorbance / intensity",
+      color = "data state",
+      alpha = "data state"
+    ) +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
+      panel.grid.minor = element_blank())
+
+  if (save) {
+    ggsave(
+      filename = file.path(out_dir, "spectral smoothing comparison.png"),
+      plot = p,
+      width = 12,
+      height = 6,
+      dpi = 300
+    )
+  }
+
   invisible(p)
 }

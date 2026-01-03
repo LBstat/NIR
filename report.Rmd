@@ -13,7 +13,7 @@ output: html_document
 
 ### *Data preparation and pre-processing*
 
-```{r analysis.1, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
+```{r exploration, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 source("settings.R")
 source("source_all.R")
 
@@ -25,81 +25,78 @@ data.analysis <- readRDS("data/intermediate/data analysis.rds")
 
 knitr::include_graphics("plot/densities1.png")
 knitr::include_graphics("plot/densities2.png")
-knitr::include_graphics("plot/imputation_7_K value.png")
 
 data.imputed <- readRDS("data/intermediate/data imputated.rds")
+
+knitr::include_graphics("plot/imputation_7_K value.png")
+
+data.cluster <- data.analysis |> dplyr::select(grep("^[[:digit:]]*$", colnames(data.analysis), value = TRUE))
+colnames(data.cluster) <- paste0("V", colnames(data.cluster))
+
+data.cluster.smooth <- smoothing(data.cluster)
+
+plot_spectral_comparison(data.cluster, data.cluster.smooth)
+knitr::include_graphics("plot/spectral smoothing comparasion.png")
+
+data.cluster.smooth <- bind_cols(data.cluster.smooth, class = data.analysis$class)
 ```
 
 - large dataset, 5 measure position equivalent to each other (as seen in the hraphic, densities have are not symmetric), aggregation through median sample value. 
 - variables used for imputation not normal (kolmogorov-smirnov test), so pmm best imputation method
 - missing values (MAR) - imputation of missing trhough predictive mean matching (10 dataset imputaed, best dataset choosen - see graphic, imputed values for k-value overlapping the best)
-- spectral measures aggregated through median 
+- spectral measures aggregated through median, smoothed by taking 
 - classification of samples thanks to kvalue - very fresh, fresh, deteriorated, very deteriorated
+
 
 ### *Correlation vs. feature selection*
 
-```{r analysis.2, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
+-discussion about why feature seleciton is better than correlation
+
+```{r features, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 cor.data <- data.analysis |> dplyr::select(!c(sample, class))
 corr_Kvalue <- cor(cor.data)["K value",]
 
 top.cor <- sort(abs(corr_Kvalue), decreasing = TRUE)
 (top.cor <- head(top.cor, 10))
 
-data.cluster <- data.analysis |> dplyr::select(grep("^[[:digit:]]*$", names(top.cor), value = TRUE), class)
-
 task <- TaskClassif$new(
   id = "Classification original data",
-  backend = data.cluster,
+  backend = data.cluster.smooth,
   target = "class",
-  positive = "fresco"
+  positive = "fresh"
 )
 
 task$col_roles$stratum <- "class"
 
-if (!file.exists("data/results/results correlation.rds")) {
-  cor.analysis(task)
-}
-
-results.cor <- readRDS("data/results/results correlation.rds")
-
+methods <- c("anova", "auc", "importance", "information_gain")
+tab <- as.data.frame(lapply(methods, function(i) feature_selection(task, i)))
+colnames(tab) <- methods
+head(tab)
 ```
 
-```{r analysis.3, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
-data.cluster <- data.analysis |> dplyr::select(grep("^[[:digit:]]*$", colnames(data.analysis), value = TRUE))
-colnames(data.cluster) <- paste0("V", colnames(data.cluster))
+-auc and anova confirms some interesting features, we expect algorithm to choose similar features
 
-data.cluster <- bind_cols(data.cluster, class = data.analysis$class)
+### *QDA, LDA and k-NN on raw data (scaled and balanced) components*
 
-task <- TaskClassif$new(
-  id = "Classification original data",
-  backend = data.cluster,
-  target = "class",
-  positive = "fresco"
-)
+```{r analysis.1, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 
-task$col_roles$stratum <- "class"
-
-top.features <- feature.selection(task)
-
-data.cluster <- data.cluster |> dplyr::select(top.features, class)
-
-task <- TaskClassif$new(
-  id = "Classification original data",
-  backend = data.cluster,
-  target = "class",
-  positive = "fresco"
-)
-
-task$col_roles$stratum <- "class"
-
-if (!file.exists("data/results/results auc.rds")) {
-  auc.analysis(task)
+if (!file.exists("data/results/results.rds")) {
+  feature_analysis(task)
 }
 
-results.auc <- readRDS("data/results/results auc.rds")
+results1 <- readRDS("data/results/results.rds")
 ```
 
 ### *QDA, LDA and k-NN on (smoothed) PCA components*
+
+```{r analysis.2, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
+
+if (!file.exists()) {
+  
+}
+
+results2 <- readRDS()
+```
 
 ### *Support vector machines*
 

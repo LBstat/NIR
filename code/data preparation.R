@@ -1,4 +1,5 @@
 
+# Data building function
 build_data_main <- function() {
   data <- read_excel("data/raw/Dati filetti.xlsx")
   data.lightness <- read_excel("data/raw/Dati luminosità.xlsx")
@@ -78,18 +79,16 @@ build_data_main <- function() {
   saveRDS(data.analysis, file = "data/intermediate/data analysis.rds")
 }
 
-feature.selection <- function(task) {
+# Function that explores different method for feature selection
+feature_selection <- function(task, filter = "auc") {
 
-  filter_auc = flt("auc")
-  filter_auc$calculate(task)
+  # Assertions
+  assertString(filter)
+  assertSubset(filter, choices = c("anova", "auc", "importance", "information_gain"))
 
-  df_scores = as.data.frame(filter_auc$scores)
-  colnames(df_scores) = "Score_AUC_Raw"
+  # Selection
+  filter_selection = flt(filter)
+  filter_selection$calculate(task)
 
-  df_scores$AUC_Real = round(df_scores$Score_AUC_Raw + 0.5, 3)
-  
-  print(head(df_scores, 10))
-
-  top_features <- rownames(df_scores[1:3,])
-  top_features
+  filter_selection$scores
 }
