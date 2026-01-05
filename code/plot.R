@@ -162,7 +162,7 @@ plot_spectral_comparison <- function(raw_data, smoothed_data, n_samples = 5, out
     scale_alpha_manual(values = c("raw" = 0.4, "smoothed" = 1)) +
     scale_color_manual(values = c("raw" = "#003366", "smoothed" = "#9B1B30")) +
     labs(
-      title = "Spectral Smoothing Comparison (Savitzky-Golay)",
+      title = "Spectral Smoothing/SNV Comparison",
       subtitle = paste("Showing", n_samples, "randomly selected spectra"),
       x = "wavelength / wavenumber",
       y = "absorbance / intensity",
@@ -179,6 +179,58 @@ plot_spectral_comparison <- function(raw_data, smoothed_data, n_samples = 5, out
   if (save) {
     ggsave(
       filename = file.path(out_dir, "spectral smoothing comparison.png"),
+      plot = p,
+      width = 12,
+      height = 6,
+      dpi = 300
+    )
+  }
+
+  invisible(p)
+}
+
+pca_representation_facet <- function(pca.res, class, j, out_dir = "plot/", save = TRUE) {
+
+  # Assertions
+  assertClass(pca.res, "prcomp")
+  assertFactor(class, any.missing = FALSE)
+  assertNumber(j, lower = 1)
+  assertString(out_dir)
+  assertFlag(save)
+
+  pca.df <- as.data.frame(pca.res$x[, 1:(2*j)])
+  pca.df$class <- class
+  pca.df$id <- seq_len(nrow(pca.df))
+
+  var_exp <- summary(pca.res)$importance[2, ]
+
+  long.df <- bind_rows(
+    lapply(seq_len(j), function(i) {
+      tibble(
+        PCx = pca.df[[paste0("PC", 2*i - 1)]],
+        PCy = pca.df[[paste0("PC", 2*i)]],
+        class = class,
+        pair = paste0("PC", 2*i - 1, " vs PC", 2*i),
+        xlab = paste0("PC", 2*i - 1, " (", round(var_exp[2*i - 1]*100,1), "%)"),
+        ylab = paste0("PC", 2*i, " (", round(var_exp[2*i]*100,1), "%)")
+      )
+    })
+  )
+
+  p <- ggplot(long.df, aes(PCx, PCy, colour = class)) +
+    geom_point(alpha = 0.8, size = 2.2) +
+    facet_wrap(~ pair, scales = "free") +
+    scale_color_manual(values = c("fresh" = "#003366", "deteriorated" = "#9B1B30")) +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
+      panel.grid.minor = element_blank())
+
+  if (save) {
+    ggsave(
+      filename = file.path(out_dir, "pca scatterplot.png"),
       plot = p,
       width = 12,
       height = 6,

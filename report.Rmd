@@ -34,11 +34,12 @@ data.cluster <- data.analysis |> dplyr::select(grep("^[[:digit:]]*$", colnames(d
 colnames(data.cluster) <- paste0("V", colnames(data.cluster))
 
 data.cluster.smooth <- smoothing(data.cluster)
+data.cluster.snv <- as_tibble(t(apply(data.cluster.smooth, MARGIN = 1, FUN = normalization)))
 
-plot_spectral_comparison(data.cluster, data.cluster.smooth)
-knitr::include_graphics("plot/spectral smoothing comparasion.png")
+plot_spectral_comparison(data.cluster, data.cluster.snv, n_samples = 6)
+knitr::include_graphics("plot/spectral smoothing comparison.png")
 
-data.cluster.smooth <- bind_cols(data.cluster.smooth, class = data.analysis$class)
+data.cluster.final <- bind_cols(data.cluster.snv, class = data.analysis$class)
 ```
 
 - large dataset, 5 measure position equivalent to each other (as seen in the hraphic, densities have are not symmetric), aggregation through median sample value. 
@@ -56,49 +57,74 @@ data.cluster.smooth <- bind_cols(data.cluster.smooth, class = data.analysis$clas
 cor.data <- data.analysis |> dplyr::select(!c(sample, class))
 corr_Kvalue <- cor(cor.data)["K value",]
 
-top.cor <- sort(abs(corr_Kvalue), decreasing = TRUE)
-(top.cor <- head(top.cor, 10))
+head(sort(abs(corr_Kvalue), decreasing = TRUE), 10)
 
 task <- TaskClassif$new(
   id = "Classification original data",
-  backend = data.cluster.smooth,
+  backend = data.cluster.final,
   target = "class",
   positive = "fresh"
 )
 
 task$col_roles$stratum <- "class"
 
-methods <- c("anova", "auc", "importance", "information_gain")
+methods <- c("anova", "auc", "mrmr")
 tab <- as.data.frame(lapply(methods, function(i) feature_selection(task, i)))
 colnames(tab) <- methods
-head(tab)
+head(tab, 10)
 ```
 
 -auc and anova confirms some interesting features, we expect algorithm to choose similar features
 
-### *QDA, LDA and k-NN on raw data (scaled and balanced) components*
+### *QDA, LDA, k-NN and SVM on raw data (scaled and balanced) components*
 
 ```{r analysis.1, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
+set.seed(123)
+resampling.outer <- rsmp("cv", folds = 5)
+resampling.instance <- resampling.outer$instantiate(task)
 
-if (!file.exists("data/results/results.rds")) {
-  feature_analysis(task)
+if (!file.exists("data/results/results1.rds")) {
+  feature_analysis(task, resampling_instance = resampling.instance, filter_type = "mrmr")
 }
 
-results1 <- readRDS("data/results/results.rds")
+results1 <- readRDS("data/results/results1.rds")
+results1$performance
+results1$learners$LDA$learner$graph_model$pipeops$feat_select$state$outtasklayout
+results1$learners$QDA$learner$graph_model$pipeops$feat_select$state$outtasklayout
+results1$learners$kNN$learner$graph_model$pipeops$feat_select$state$outtasklayout
+results1$learners$SVM$learner$graph_model$pipeops$feat_select$state$outtasklayout
 ```
 
-### *QDA, LDA and k-NN on (smoothed) PCA components*
+### *QDA, LDA, k-NN and SVM on PCA components*
 
 ```{r analysis.2, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 
-if (!file.exists()) {
-  
+pca.res <- prcomp(data.cluster.final[, -141], center = TRUE, scale. = TRUE)
+head(summary(pca.res)$importance[3, ], n = 12)
+
+pca_representation_facet(pca.res, data.analysis$class, 6)
+
+if (!file.exists("data/results/results2.rds")) {
+  feature_analysis(task, resampling_instance = resampling.instance, filter = FALSE, pca = TRUE)
 }
 
-results2 <- readRDS()
+results2 <- readRDS("data/results/results2.rds")
+results2$performance
+results2$learners$LDA$learner$graph_model$pipeops$rank_select$state$outtasklayout
+results2$learners$QDA$learner$graph_model$pipeops$rank_select$state$outtasklayout
+results2$learners$kNN$learner$graph_model$pipeops$rank_select$state$outtasklayout
+results2$learners$SVM$learner$graph_model$pipeops$rank_select$state$outtasklayout
 ```
 
 ### *Support vector machines*
+
+```{r analysis.3, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
+
+```
+
+```{r analysis.4, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
+
+```
 
 ## **Results**
 

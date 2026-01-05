@@ -84,9 +84,10 @@ feature_selection <- function(task, filter = "auc") {
 
   # Assertions
   assertString(filter)
-  assertSubset(filter, choices = c("anova", "auc", "importance", "information_gain"))
+  assertSubset(filter, choices = c("anova", "auc", "importance", "information_gain", "mrmr"))
 
   # Selection
+  set.seed(123)
   filter_selection = flt(filter)
   filter_selection$calculate(task)
 

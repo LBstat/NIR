@@ -66,7 +66,7 @@ smoothing <- function(data, window = 11, poly = 2, m = 0) {
   
   # Perform smoothing
   smoothed <- t(apply(data, 1, function(x) sgolayfilt(x, p = poly, n = window, m = m)))
-  
+
   # Convert back to data frame and RE-ASSIGN NAMES
   smoothed_df <- as.data.frame(smoothed)
   colnames(smoothed_df) <- orig_names
@@ -76,6 +76,6 @@ smoothing <- function(data, window = 11, poly = 2, m = 0) {
 # Function to normalize single numeric vectors
 normalization <- function(x) {
   assertNumeric(x, any.missing = FALSE)
-  
+
   (x - mean(x)) / sd(x)
 }
