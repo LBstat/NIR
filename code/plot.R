@@ -67,7 +67,7 @@ graphical.comparation <- function(imputed_data, imputed_pos, x, y, x_ignore = FA
 
   if (save) {
     if (is.null(dataset_id)) dataset_id <- format(Sys.time(), "%H%M%S")
-    filename <- paste0("imputation_", dataset_id, "_", y, ".png")
+    filename <- paste0("imputation_", dataset_id, "_", paste0(strsplit(y, split = " ")[[1]], collapse = ""), ".png")
     ggsave(
       filename = file.path(out_dir, filename),
       plot = p,
@@ -178,7 +178,7 @@ plot_spectral_comparison <- function(raw_data, smoothed_data, n_samples = 5, out
 
   if (save) {
     ggsave(
-      filename = file.path(out_dir, "spectral smoothing comparison.png"),
+      filename = file.path(out_dir, "spectral_smoothing_comparison.png"),
       plot = p,
       width = 12,
       height = 6,
@@ -204,18 +204,19 @@ pca_representation_facet <- function(pca.res, class, j, out_dir = "plot/", save 
 
   var_exp <- summary(pca.res)$importance[2, ]
 
-  long.df <- bind_rows(
-    lapply(seq_len(j), function(i) {
-      tibble(
-        PCx = pca.df[[paste0("PC", 2*i - 1)]],
-        PCy = pca.df[[paste0("PC", 2*i)]],
-        class = class,
-        pair = paste0("PC", 2*i - 1, " vs PC", 2*i),
-        xlab = paste0("PC", 2*i - 1, " (", round(var_exp[2*i - 1]*100,1), "%)"),
-        ylab = paste0("PC", 2*i, " (", round(var_exp[2*i]*100,1), "%)")
-      )
-    })
-  )
+  data_list <- lapply(seq_len(j), function(i) {
+    tibble(
+      PCx = pca.df[[paste0("PC", 2*i - 1)]],
+      PCy = pca.df[[paste0("PC", 2*i)]],
+      class = class,
+      pair = paste0("PC", 2*i - 1, " vs PC", 2*i),
+      xlab = paste0("PC", 2*i - 1, " (", round(var_exp[2*i - 1]*100,1), "%)"),
+      ylab = paste0("PC", 2*i, " (", round(var_exp[2*i]*100,1), "%)")
+    )
+  })
+
+  long.df <- bind_rows(data_list)
+  long.df$pair <- factor(long.df$pair, levels = unique(long.df$pair))
 
   p <- ggplot(long.df, aes(PCx, PCy, colour = class)) +
     geom_point(alpha = 0.8, size = 2.2) +
@@ -230,7 +231,7 @@ pca_representation_facet <- function(pca.res, class, j, out_dir = "plot/", save 
 
   if (save) {
     ggsave(
-      filename = file.path(out_dir, "pca scatterplot.png"),
+      filename = file.path(out_dir, "pca_scatterplot.png"),
       plot = p,
       width = 12,
       height = 6,

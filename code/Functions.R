@@ -2,6 +2,8 @@
 # Function that performs Shapiro Wilk Normality Test on each numerical column of a given
 # data frame. The histogram of the data and the theoretical normality density curve are plotted.
 multivariable.normality.test <- function(data, out_dir = "plot/", save = TRUE, print = FALSE) {
+
+  # Assertions
   assertDataFrame(data, types = "numeric")
 
   for (i in seq_len(ncol(data))) {
@@ -54,6 +56,8 @@ multivariable.normality.test <- function(data, out_dir = "plot/", save = TRUE, p
 
 # Function that performs linear smoothing. Derivatives obtained by setting m != 0
 smoothing <- function(data, window = 11, poly = 2, m = 0) {
+
+  # Assertions
   assertDataFrame(data, types = "numeric")
   assertNumber(window)
   assertNumber(poly, lower = 1)
@@ -75,7 +79,29 @@ smoothing <- function(data, window = 11, poly = 2, m = 0) {
 
 # Function to normalize single numeric vectors
 normalization <- function(x) {
+
+  # Assertions
   assertNumeric(x, any.missing = FALSE)
 
   (x - mean(x)) / sd(x)
+}
+
+# Function that extracts data from lapply list results
+extract_metrics <- function(res_item, index) {
+
+  # Assertions
+  assertList(res_item, null.ok = FALSE)
+  assertNumber(index)
+
+  current_pcs <- paste(combinations_list[[index]], collapse = ", ")
+
+  df <- data.frame(
+    rank = index,
+    pcs = current_pcs,
+    acc = res_item$performance["classif.acc"],
+    auc = res_item$performance["classif.auc"],
+    sens = res_item$performance["classif.sensitivity"],
+    spec = res_item$performance["classif.specificity"],
+    stringsAsFactors = FALSE
+  )
 }

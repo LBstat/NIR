@@ -84,14 +84,14 @@ resampling.outer <- rsmp("cv", folds = 5)
 resampling.instance <- resampling.outer$instantiate(task)
 
 if (!file.exists("data/results/results1.rds")) {
-  feature_analysis(task, resampling_instance = resampling.instance, filter_type = "mrmr")
+  feature_analysis(task, resampling_instance = resampling.instance)
 }
 
 results1 <- readRDS("data/results/results1.rds")
 results1$performance
 
 autoplot(results1$benchmark_obj, measure = msr("classif.auc")) + 
-  labs(title = "Stabilità dell'AUC tra i 5 Fold") +
+  labs(title = "AUC satbility between folds") +
   theme_minimal() +
   theme(
     axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
@@ -100,7 +100,7 @@ autoplot(results1$benchmark_obj, measure = msr("classif.auc")) +
     panel.grid.minor = element_blank())
 
 autoplot(results1$benchmark_obj, measure = msr("classif.acc")) + 
-  labs(title = "Stabilità dell'Accuracy tra i 5 Fold") +
+  labs(title = "Accuracy stability between folds") +
   theme_minimal() +
   theme(
     axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
@@ -109,7 +109,7 @@ autoplot(results1$benchmark_obj, measure = msr("classif.acc")) +
     panel.grid.minor = element_blank())
 
 autoplot(results1$benchmark_obj, type = "roc") + 
-  labs(title = "Confronto Curve ROC (Media dei Fold)") +
+  labs(title = "ROC curves (mean between folds)") +
   theme_minimal() +
   theme(
     axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
@@ -140,7 +140,7 @@ results2 <- readRDS("data/results/results2.rds")
 results2$performance
 
 autoplot(results2$benchmark_obj, measure = msr("classif.auc")) + 
-  labs(title = "Stabilità dell'AUC tra i 5 Fold") +
+  labs(title = "AUC stability between folds") +
   theme_minimal() +
   theme(
     axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
@@ -149,7 +149,7 @@ autoplot(results2$benchmark_obj, measure = msr("classif.auc")) +
     panel.grid.minor = element_blank())
 
 autoplot(results2$benchmark_obj, measure = msr("classif.acc")) + 
-  labs(title = "Stabilità dell'Accuracy tra i 5 Fold") +
+  labs(title = "Accuracy stability between folds") +
   theme_minimal() +
   theme(
     axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
@@ -158,7 +158,7 @@ autoplot(results2$benchmark_obj, measure = msr("classif.acc")) +
     panel.grid.minor = element_blank())
 
 autoplot(results2$benchmark_obj, type = "roc") + 
-  labs(title = "Confronto Curve ROC (Media dei Fold)") +
+  labs(title = "ROC curves (mean between folds)") +
   theme_minimal() +
   theme(
     axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
@@ -172,7 +172,7 @@ results2$learners$kNN$learner$graph_model$pipeops$rank_select$state$outtasklayou
 results2$learners$SVM$learner$graph_model$pipeops$rank_select$state$outtasklayout
 ```
 
-### *Expert knowledge selection for pca components in qda model*
+### *Brute force selection for pca components in qda model*
 
 ```{r analysis.4, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 
@@ -190,28 +190,15 @@ combinations_list <- map(min_pc:max_pc, function(k) {
 
 print(paste("Totale combinazioni da testare:", length(combinations_list)))
 
-results_list <- lapply(combinations_list, function(x) {
+if (!file.exists("data/results/results_list.rds")) {
+  results_list <- lapply(combinations_list, function(x) {
   model_qda_deep_dive(task, resampling_instance =  resampling.instance, pca_fix = TRUE, pca_selected = x)
-})
-
-# Funzione per estrarre i dati da ogni elemento della lista prodotta da lapply
-extract_metrics <- function(res_item, index) {
-  if (is.null(res_item)) return(NULL)
-
-  current_pcs <- paste(combinations_list[[index]], collapse = ", ")
-
-  df <- data.frame(
-    rank = index,
-    pcs = current_pcs,
-    acc = res_item$performance["classif.acc"],
-    auc = res_item$performance["classif.auc"],
-    sens = res_item$performance["classif.sensitivity"],
-    spec = res_item$performance["classif.specificity"],
-    stringsAsFactors = FALSE
-    )
+  })
+  saveRDS(results_list, file = "data/results/results_list.rds")
 }
 
-# Applichiamo la funzione a tutta la lista dei risultati
+results_list <- readRDS("data/results/results_list.rds")
+
 summary_df <- imap_dfr(results_list, extract_metrics)
 
 top_10_results <- summary_df |> arrange(desc(auc), desc(spec)) |> head(10)
@@ -219,10 +206,47 @@ rownames(top_10_results) <- top_10_results$rank
 top_10_results |> dplyr::select(!rank)
 print(top_10_results)
 
-result_final<- model_qda_deep_dive(task, resampling_instance = resampling.instance, pca_rank = 12, pca_fix = TRUE, pca_selected = c("PC1","PC2", "PC3", "PC5"))
+if (!file.exists("data/results/results_final.rds")) {
+  result_final<- model_qda_deep_dive(task, resampling_instance = resampling.instance, pca_rank = 12, pca_fix = TRUE,
+    pca_selected = c("PC1","PC2", "PC3", "PC5"))
+  saveRDS(results_list, file = "data/results/results_final.rds")
+}
+
+results_final <- readRDS("data/results/results_final.rds")
+results_final$performance
+results_final$confusion_matrix
+
+bmr <- as_benchmark_result(results_final$resampling_results)
+
+autoplot(bmr, measure = msr("classif.auc")) + 
+  labs(title = "AUC stability between folds") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
+    panel.grid.minor = element_blank())
+
+autoplot(bmr, measure = msr("classif.acc")) + 
+  labs(title = "Accuracy stability between folds") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
+    panel.grid.minor = element_blank())
+
+autoplot(bmr, type = "roc") + 
+  labs(title = "ROC curves (mean between folds)") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
+    panel.grid.minor = element_blank())
 ```
 
-## **Results**
+### *Model deficencies discussion*
 
 ```{r results, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 # Estraiamo le predizioni
@@ -243,3 +267,6 @@ riepilogo_errori <- data.frame(
 print("--- Campioni Deteriorati classificati come Fresh (Falsi Positivi) ---")
 print(riepilogo_errori)
 ```
+
+## **Results**
+

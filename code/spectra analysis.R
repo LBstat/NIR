@@ -38,7 +38,7 @@ feature_analysis <- function(task, resampling_folds = 5, resampling_instance = N
     )
 
   # Benchmark
-  bmr = as_benchmark_result(results.lda$resampling_results)
+  bmr <- as_benchmark_result(results.lda$resampling_results)
   bmr$combine(as_benchmark_result(results.qda$resampling_results))
   bmr$combine(as_benchmark_result(results.knn$resampling_results))
   bmr$combine(as_benchmark_result(results.svm$resampling_results))
