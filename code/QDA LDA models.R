@@ -24,7 +24,7 @@ model_lda <- function(task, resampling_folds = 5, resampling_instance = NULL, re
   pipeline <- list(
     po("scale"),
     po("classbalancing", adjust = "minor", reference = "major", id = "balance")
-  )
+    )
 
   # 2 Hyperparameters
   # 2.1 Conditionally add filter
@@ -32,8 +32,8 @@ model_lda <- function(task, resampling_folds = 5, resampling_instance = NULL, re
     pipeline <- c(pipeline, po("filter", filter = flt(filter_type), filter.nfeat = 1, id = "feat_select"))
     
     param_space <- ps(
-      feat_select.filter.nfeat = p_int(lower = 1, upper = 10)
-    )
+      feat_select.filter.nfeat = p_int(lower = 1, upper = 12)
+      )
   }
   
   # 2.2 Conditionally add PCA
@@ -42,7 +42,7 @@ model_lda <- function(task, resampling_folds = 5, resampling_instance = NULL, re
     
     param_space <- ps(
       rank_select.rank. = p_int(lower = 1, upper = 8)
-    )
+      )
   }
 
   # 3. Add the Learner
@@ -65,7 +65,7 @@ model_lda <- function(task, resampling_folds = 5, resampling_instance = NULL, re
     search_space = param_space,
     terminator = trm("none"),
     tuner = tnr("grid_search", resolution = resolution)
-  )
+    )
 
   # 6. Resampling (using the function argument for folds)
   set.seed(123)
@@ -84,13 +84,13 @@ model_lda <- function(task, resampling_folds = 5, resampling_instance = NULL, re
     confusion_matrix = rr_lda$prediction()$confusion,
     resampling_results = rr_lda,
     final_model_object = at_lda
-  )
+    )
 }
 
 # Function for qda model
 model_qda <- function(task, resampling_folds = 5, resampling_instance = NULL, resolution = 10, measure_prob = "classif.auc",
   measures = c("classif.acc", "classif.auc", "classif.ce", "classif.sensitivity", "classif.specificity"), filter = TRUE,
-  filter_type = "auc", pca = FALSE, pca_rank = NULL) {
+  filter_type = "auc", pca = FALSE) {
 
   # Assertions
   assertNumber(resampling_folds, lower = 3)
@@ -112,7 +112,7 @@ model_qda <- function(task, resampling_folds = 5, resampling_instance = NULL, re
   pipeline <- list(
     po("scale"),
     po("classbalancing", adjust = "minor", reference = "major", id = "balance")
-  )
+    )
 
   # 2 Hyperparameters
   # 2.1 Conditionally add filter
@@ -130,7 +130,7 @@ model_qda <- function(task, resampling_folds = 5, resampling_instance = NULL, re
 
     param_space <- ps(
       rank_select.rank. = p_int(lower = 1, upper = 6)
-    )
+      )
   }
 
   # 3. Add the Learner
@@ -153,7 +153,7 @@ model_qda <- function(task, resampling_folds = 5, resampling_instance = NULL, re
     search_space = param_space,
     terminator = trm("none"),
     tuner = tnr("grid_search", resolution = resolution)
-  )
+    )
 
   # 6. Resampling (using the function argument for folds)
   set.seed(123)
@@ -172,5 +172,5 @@ model_qda <- function(task, resampling_folds = 5, resampling_instance = NULL, re
     confusion_matrix = rr_qda$prediction()$confusion,
     resampling_results = rr_qda,
     final_model_object = at_qda
-  )
+    )
 }

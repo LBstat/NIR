@@ -30,7 +30,7 @@ verifying the non-normal distribution of the variables involved, missing values 
 predictive mean matching. Finally, the dataset whose imputed values exhibited the closest distributional
 similarity to the observed data was selected for subsequent analyses.
 
-![](plot/imputation_7_K value.png)
+![](plot/imputation_7_K%20value.png)
 
 Two main analytical approaches were then pursued:
 - A feature-selection-based approach aimed at identifying the most informative wavelengths.
@@ -38,14 +38,14 @@ Two main analytical approaches were then pursued:
   non-informative variables while concentrating information into a smaller set of highly informative
   components.
 
-![](plot/spectral smoothing comparison.png)
+![](plot/spectral%20smoothing%20comparison.png)
 
 Given the limited classification performance observed when using individual wavelengths or the first
 two principal components, the analysis was further refined by applying feature selection to the first 10
 principal components (accounting for approximately 99% of the total variance). This allowed the models to
 select the components with the greatest discriminative power.
 
-![](plot/pca scatterplot.png)
+![](plot/pca%20scatterplot.png)
 
 All analyses were conducted with careful attention to avoiding bias and data leakage. Data preprocessing
 and feature selection were fully embedded within the training pipeline using nested cross-validation.

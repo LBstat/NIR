@@ -89,6 +89,34 @@ if (!file.exists("data/results/results1.rds")) {
 
 results1 <- readRDS("data/results/results1.rds")
 results1$performance
+
+autoplot(results1$benchmark_obj, measure = msr("classif.auc")) + 
+  labs(title = "Stabilità dell'AUC tra i 5 Fold") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
+    panel.grid.minor = element_blank())
+
+autoplot(results1$benchmark_obj, measure = msr("classif.acc")) + 
+  labs(title = "Stabilità dell'Accuracy tra i 5 Fold") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
+    panel.grid.minor = element_blank())
+
+autoplot(results1$benchmark_obj, type = "roc") + 
+  labs(title = "Confronto Curve ROC (Media dei Fold)") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
+    panel.grid.minor = element_blank())
+
 results1$learners$LDA$learner$graph_model$pipeops$feat_select$state$outtasklayout
 results1$learners$QDA$learner$graph_model$pipeops$feat_select$state$outtasklayout
 results1$learners$kNN$learner$graph_model$pipeops$feat_select$state$outtasklayout
@@ -110,21 +138,108 @@ if (!file.exists("data/results/results2.rds")) {
 
 results2 <- readRDS("data/results/results2.rds")
 results2$performance
+
+autoplot(results2$benchmark_obj, measure = msr("classif.auc")) + 
+  labs(title = "Stabilità dell'AUC tra i 5 Fold") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
+    panel.grid.minor = element_blank())
+
+autoplot(results2$benchmark_obj, measure = msr("classif.acc")) + 
+  labs(title = "Stabilità dell'Accuracy tra i 5 Fold") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
+    panel.grid.minor = element_blank())
+
+autoplot(results2$benchmark_obj, type = "roc") + 
+  labs(title = "Confronto Curve ROC (Media dei Fold)") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
+    panel.grid.minor = element_blank())
+
 results2$learners$LDA$learner$graph_model$pipeops$rank_select$state$outtasklayout
 results2$learners$QDA$learner$graph_model$pipeops$rank_select$state$outtasklayout
 results2$learners$kNN$learner$graph_model$pipeops$rank_select$state$outtasklayout
 results2$learners$SVM$learner$graph_model$pipeops$rank_select$state$outtasklayout
 ```
 
-### *Support vector machines*
-
-```{r analysis.3, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
-
-```
+### *Expert knowledge selection for pca components in qda model*
 
 ```{r analysis.4, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 
+# Definiamo il pool di componenti basandoci sull'evidenza dei tuoi modelli precendenti
+pc_pool <- paste0("PC", 1:8)
+
+# Generiamo tutte le combinazioni da 2 a 6 elementi. Questo produrrà esattamente 238 combinazioni
+min_pc <- 2
+max_pc <- 6
+
+combinations_list <- map(min_pc:max_pc, function(k) {
+  combs <- combn(pc_pool, k, simplify = FALSE)
+  combs
+}) |> flatten()
+
+print(paste("Totale combinazioni da testare:", length(combinations_list)))
+
+results_list <- lapply(combinations_list, function(x) {
+  model_qda_deep_dive(task, resampling_instance =  resampling.instance, pca_fix = TRUE, pca_selected = x)
+})
+
+# Funzione per estrarre i dati da ogni elemento della lista prodotta da lapply
+extract_metrics <- function(res_item, index) {
+  if (is.null(res_item)) return(NULL)
+
+  current_pcs <- paste(combinations_list[[index]], collapse = ", ")
+
+  df <- data.frame(
+    rank = index,
+    pcs = current_pcs,
+    acc = res_item$performance["classif.acc"],
+    auc = res_item$performance["classif.auc"],
+    sens = res_item$performance["classif.sensitivity"],
+    spec = res_item$performance["classif.specificity"],
+    stringsAsFactors = FALSE
+    )
+}
+
+# Applichiamo la funzione a tutta la lista dei risultati
+summary_df <- imap_dfr(results_list, extract_metrics)
+
+top_10_results <- summary_df |> arrange(desc(auc), desc(spec)) |> head(10)
+rownames(top_10_results) <- top_10_results$rank
+top_10_results |> dplyr::select(!rank)
+print(top_10_results)
+
+result_final<- model_qda_deep_dive(task, resampling_instance = resampling.instance, pca_rank = 12, pca_fix = TRUE, pca_selected = c("PC1","PC2", "PC3", "PC5"))
 ```
 
 ## **Results**
 
+```{r results, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
+# Estraiamo le predizioni
+preds <- as.data.table(result_final$resampling_results$prediction())
+
+# Identifichiamo i Falsi Positivi (Verità = deteriorated, Risposta = fresh)
+falsi_positivi_ids <- preds[truth == "deteriorated" & response == "fresh", row_ids]
+
+# Estraiamo i dati dal dataset originale
+colpevoli_data <- data.cluster.compare[falsi_positivi_ids, ]
+
+# Creiamo il riepilogo (usa i nomi esatti delle tue colonne)
+riepilogo_errori <- data.frame(
+  Row_ID = falsi_positivi_ids,
+  Giorno = colpevoli_data$day
+  )
+
+print("--- Campioni Deteriorati classificati come Fresh (Falsi Positivi) ---")
+print(riepilogo_errori)
+```

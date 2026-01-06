@@ -24,7 +24,7 @@ tune_svm <- function(task, resampling_folds = 5, resampling_instance = NULL, n_e
   pipeline <- list(
     po("scale"),
     po("classbalancing", adjust = "minor", reference = "major", id = "balance")
-  )
+    )
 
   # 2. Hyperparameters
   # 2.1 Conditionally add filter
@@ -44,7 +44,7 @@ tune_svm <- function(task, resampling_folds = 5, resampling_instance = NULL, n_e
     pipeline <- c(pipeline, po("pca", rank. = 1, id = "rank_select"))
 
     param_space <- ps(
-      rank_select.rank. = p_int(lower = 1, upper = 8),
+      rank_select.rank. = p_int(lower = 1, upper = 12),
       classif.svm.kernel = p_fct(c("radial", "polynomial", "sigmoid")),
       classif.svm.cost = p_dbl(lower = 0.1, upper = 10, logscale = TRUE),
       classif.svm.gamma = p_dbl(lower = 0.001, upper = 1, logscale = TRUE)
@@ -71,7 +71,7 @@ tune_svm <- function(task, resampling_folds = 5, resampling_instance = NULL, n_e
     search_space = param_space,
     terminator = trm("evals", n_evals = n_evals),
     tuner = tnr("random_search")
-  )
+    )
 
   # 6. Resampling (using the function argument for folds)
   set.seed(123)
@@ -90,7 +90,7 @@ tune_svm <- function(task, resampling_folds = 5, resampling_instance = NULL, n_e
     confusion_matrix = rr_svm$prediction()$confusion,
     resampling_results = rr_svm,
     final_model_object = at_svm
-  )
+    )
 }
 
 # Function that trains the knn algortihm.
@@ -118,7 +118,7 @@ tune_knn <- function(task, resampling_folds = 5, resampling_instance = NULL, n_e
   pipeline <- list(
     po("scale"),
     po("classbalancing", adjust = "minor", reference = "major", id = "balance")
-  )
+    )
 
   # 2. Hyperparameters
   # 2.1 Conditionally add filter
@@ -136,7 +136,7 @@ tune_knn <- function(task, resampling_folds = 5, resampling_instance = NULL, n_e
   if (pca) {
     pipeline <- c(pipeline, po("pca", rank. = 1, id = "rank_select"))
     param_space <- ps(
-      rank_select.rank. = p_int(lower = 1, upper = 8),
+      rank_select.rank. = p_int(lower = 1, upper = 12),
       classif.kknn.k = p_int(lower = 2, upper = 15),
       classif.kknn.distance = p_dbl(lower = 1, upper = 2)
       )
@@ -162,7 +162,7 @@ tune_knn <- function(task, resampling_folds = 5, resampling_instance = NULL, n_e
     search_space = param_space,
     terminator = trm("evals", n_evals = n_evals),
     tuner = tnr("random_search")
-  )
+    )
 
   # 6. Resampling (using the function argument for folds)
   set.seed(123)
@@ -181,5 +181,5 @@ tune_knn <- function(task, resampling_folds = 5, resampling_instance = NULL, n_e
     confusion_matrix = rr_knn$prediction()$confusion,
     resampling_results = rr_knn,
     final_model_object = at_knn
-  )
+    )
 }
