@@ -28,7 +28,7 @@ knitr::include_graphics("plot/densities2.png")
 
 data.imputed <- readRDS("data/intermediate/data imputated.rds")
 
-knitr::include_graphics("plot/imputation_7_K value.png")
+knitr::include_graphics("plot/imputation_7_Kvalue.png")
 
 data.cluster <- data.analysis |> dplyr::select(grep("^[[:digit:]]*$", colnames(data.analysis), value = TRUE))
 colnames(data.cluster) <- paste0("V", colnames(data.cluster))
@@ -37,7 +37,7 @@ data.cluster.smooth <- smoothing(data.cluster)
 data.cluster.snv <- as_tibble(t(apply(data.cluster.smooth, MARGIN = 1, FUN = normalization)))
 
 plot_spectral_comparison(data.cluster, data.cluster.snv, n_samples = 6)
-knitr::include_graphics("plot/spectral smoothing comparison.png")
+knitr::include_graphics("plot/spectral_smoothing_comparison.png")
 
 data.cluster.final <- bind_cols(data.cluster.snv, class = data.analysis$class)
 ```

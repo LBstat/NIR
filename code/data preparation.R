@@ -6,7 +6,6 @@ build_data_main <- function() {
   spectral.measures <- read_excel("data/raw/Spettri.xlsx")
 
   pattern <- "^[[:alpha:]]\\*?$"
-
   data.for.compare <- data.lightness |> dplyr::select(grep(pattern, colnames(data.lightness), value = TRUE))
 
   data.norm <- as_tibble(apply(data.for.compare[1:5, ], MARGIN = 2, FUN = normalization))
@@ -29,30 +28,65 @@ build_data_main <- function() {
     mutate(day = ceiling(row_number() / 5))
 
   data <- cbind(data, data.lightness)
+  data$ADP[[31]] <- 0.0247096
 
   saveRDS(data, file = "data/intermediate/data.rds")
 
-  data.for.imputation <- data[, c("IMP", "ATP", "ADP", "ipoxantina", "AMP", "Inosina", "day", "K value")]
+  data.for.imputation <- data |> dplyr::select(!c(sample, sample.number))
   cor(data.for.imputation, use = "complete.obs")
 
   multivariable.normality.test(data.for.imputation)
 
-  imp <- mice(data.for.imputation, m = 10, maxit = 50, seed = 123, method = "pmm", printFlag = FALSE)
+  m <- 10
+  imp <- mice(data.for.imputation[, -7], m = m, maxit = 50, seed = 123, method = "pmm", printFlag = FALSE)
+
+  calculate.k <- function(df) {
+    num <- df$Inosina + df$ipoxantina
+    den <- df$ATP + df$ADP + df$AMP + df$IMP + df$Inosina + df$ipoxantina
+    num / den
+  }
+
+  imputed.df <- lapply(seq_len(m), function(i) {
+    df <- complete(imp, i)
+    df$`K value` <- calculate.k(df)
+    df
+  })
+
+  imputed.pos <- which(is.na(data.for.imputation$`K value`))
+  real.vals <- data.for.imputation$`K value`[-imputed.pos]
+
+  ks.distances <- sapply(imputed.df, function(k.vector) {
+    imputed.vals <- k.vector[imputed_pos]
+
+    ks.test(real.vals, imputed.vals)$statistic
+  })
+
+  best_idx <- which.min(unname(ks.distances))
+  cat("Il dataset statisticamente più coerente è il numero:", best_idx)
+
+  trend.errors <- sapply(imputed.df, function(k.vector) {
+
+    df.temp <- data.frame(k = k.vector, day = data.for.imputation$day)
+    mod <- lm(k ~ day, data = df.temp[-imputed.pos, ])
+
+    preds <- predict(mod, newdata = df.temp[imputed.pos, ])
+    mean((k.vector[imputed.pos] - preds)^2)
+  })
+
+  best_idx <- which.min(trend.errors)
+  cat("Il dataset statisticamente più coerente è il numero:", best_idx)
 
   complete.data <- complete(imp, "long")
 
-  cor(complete.data[, c("IMP", "ATP", "ADP", "ipoxantina", "AMP", "Inosina", "day", "K value")], use = "complete.obs")
-  cor(data.for.imputation, use = "complete.obs")
+  cor(complete.data[, -c(14, 15)], use = "complete.obs")
+  cor(data.for.imputation[, -7], use = "complete.obs")
   # correlation structure preserved for strong correlated variables, slight shrinkage for less correlated variables
-
-  imputed.df <- complete(imp, "all")
-  imputed.pos <- which(is.na(data.for.imputation$`K value`))
 
   graphics <- lapply(seq_along(imputed.df), function(i) {
     graphical.comparation(imputed.df[[i]], imputed_pos = imputed.pos, x = "day", y = "K value", x_ignore = TRUE, dataset_id = i)
   })
 
-  data.imputated <- imputed.df[[7]]
+  data.imputated <- imputed.df[[5]]
   saveRDS(data.imputated, file = "data/intermediate/data imputated.rds")
 
   spectral.measures <- spectral.measures[-which(spectral.measures$spettro == 6),]

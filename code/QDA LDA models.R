@@ -32,7 +32,7 @@ model_lda <- function(task, resampling_folds = 5, resampling_instance = NULL, re
     pipeline <- c(pipeline, po("filter", filter = flt(filter_type), filter.nfeat = 1, id = "feat_select"))
     
     param_space <- ps(
-      feat_select.filter.nfeat = p_int(lower = 1, upper = 12)
+      feat_select.filter.nfeat = p_int(lower = 1, upper = 10)
       )
   }
   
@@ -41,7 +41,7 @@ model_lda <- function(task, resampling_folds = 5, resampling_instance = NULL, re
     pipeline <- c(pipeline, po("pca", rank. = 1, id = "rank_select"))
     
     param_space <- ps(
-      rank_select.rank. = p_int(lower = 1, upper = 8)
+      rank_select.rank. = p_int(lower = 1, upper = 12)
       )
   }
 
@@ -129,7 +129,7 @@ model_qda <- function(task, resampling_folds = 5, resampling_instance = NULL, re
     pipeline <- c(pipeline, po("pca", rank. = 1, id = "rank_select"))
 
     param_space <- ps(
-      rank_select.rank. = p_int(lower = 1, upper = 6)
+      rank_select.rank. = p_int(lower = 1, upper = 5)
       )
   }
 
