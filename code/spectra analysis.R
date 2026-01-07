@@ -37,6 +37,14 @@ feature_analysis <- function(task, resampling_folds = 5, resampling_instance = N
     SVM = results.svm$final_model_object
     )
 
+  # Resampling results
+  resampling <- list(
+    LDA = results.lda$resampling_results,
+    QDA = results.qda$resampling_results,
+    kNN = results.knn$resampling_results,
+    SVM = results.svm$resampling_results
+  )
+
   # Benchmark
   bmr <- as_benchmark_result(results.lda$resampling_results)
   bmr$combine(as_benchmark_result(results.qda$resampling_results))
@@ -49,6 +57,7 @@ feature_analysis <- function(task, resampling_folds = 5, resampling_instance = N
     performance = performance,
     confusion = confusion,
     learners = learners,
+    resampling = resampling,
     benchmark_obj = bmr
     )
 

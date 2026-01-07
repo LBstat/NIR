@@ -20,7 +20,7 @@ graphical.comparation <- function(imputed_data, imputed_pos, x, y, x_ignore = FA
     geom_point(alpha = 0.8, size = 2.5) +
     scale_color_manual(values = c("real" = "#003366", "imputed" = "#9B1B30")) +
     geom_smooth(method = "gam", se = TRUE, color = "black") +
-    labs(title = "Imputed dataset",
+    labs(title = paste0("Imputed dataset ", dataset_id),
          x = paste0(x),
          y = paste0(y),
          color = "Type") +
@@ -91,8 +91,8 @@ density.comparation <- function(data, out_dir = "plot/", save = TRUE) {
   p <- ggplot(data, aes(x = valore, color = variabile, fill = variabile)) +
     geom_density(alpha = 0.3) +
     labs(title = "Variable density",
-         x = "value",
-         y = "density") +
+         x = "Value",
+         y = "Density") +
     theme_minimal() +
     theme(
       axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
@@ -164,8 +164,8 @@ plot_spectral_comparison <- function(raw_data, smoothed_data, n_samples = 5, out
     labs(
       title = "Spectral Smoothing/SNV Comparison",
       subtitle = paste("Showing", n_samples, "randomly selected spectra"),
-      x = "wavelength / wavenumber",
-      y = "absorbance / intensity",
+      x = "Wavelength / wavenumber",
+      y = "Absorbance / intensity",
       color = "data state",
       alpha = "data state"
     ) +
@@ -221,7 +221,7 @@ pca_representation_facet <- function(pca.res, class, j, out_dir = "plot/", save 
   p <- ggplot(long.df, aes(PCx, PCy, colour = class)) +
     geom_point(alpha = 0.8, size = 2.2) +
     facet_wrap(~ pair, scales = "free") +
-    scale_color_manual(values = c("fresh" = "#003366", "deteriorated" = "#9B1B30")) +
+    scale_color_manual(values = c("good/acceptable" = "#003366", "impending spoilage/spoiled" = "#9B1B30")) +
     theme_minimal() +
     theme(
       axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
