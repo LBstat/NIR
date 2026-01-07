@@ -1,10 +1,11 @@
 
 feature_analysis <- function(task, resampling_folds = 5, resampling_instance = NULL, resolution = 10, n_evals_knn = 50, n_evals_svm = 100,
   measure_prob = "classif.auc", measures = c("classif.acc", "classif.auc", "classif.ce", "classif.sensitivity", "classif.specificity"),
-  filter = TRUE, filter_type = "auc", pca = FALSE, new.results = FALSE) {
+  filter = TRUE, filter_type = "auc", pca = FALSE, new_results = FALSE) {
 
-  if (is.null(resampling.instance)) message("Results might include extra variability related to different outer cross validation folds.
-  To have comparable results fix an overall outer resampling instance")
+  if (is.null(resampling.instance)) {
+  message("Results might include extra variability related to different outer cross validation folds. To have comparable results fix an overall outer resampling instance")
+  }
 
   results.lda <- model_lda(task, resampling_folds, resampling_instance, resolution, measure_prob, measures, filter, filter_type, pca)
   results.qda <- model_qda(task, resampling_folds, resampling_instance, resolution, measure_prob, measures, filter, filter_type, pca)
@@ -61,7 +62,7 @@ feature_analysis <- function(task, resampling_folds = 5, resampling_instance = N
     benchmark_obj = bmr
     )
 
-  if (new.results) {
+  if (new_results) {
     pattern <- "results([0-9]+)\\.(([0-9])+\\.)?rds"
     existing.files <- list.files("data/results/", pattern = pattern)
 

@@ -1,6 +1,6 @@
 
 # Function that compares the imputed values with the original distributions
-graphical.comparation <- function(imputed_data, imputed_pos, x, y, x_ignore = FALSE, y_ignore = FALSE, dataset_id = NULL, 
+graphical_comparation <- function(imputed_data, imputed_pos, x, y, x_ignore = FALSE, y_ignore = FALSE, dataset_id = NULL, 
   out_dir = "plot/", save = TRUE) {
 
   # Assertions
@@ -81,7 +81,7 @@ graphical.comparation <- function(imputed_data, imputed_pos, x, y, x_ignore = FA
 }
 
 # Function that compares density distributions. DataFrame must be in long format.
-density.comparation <- function(data, out_dir = "plot/", save = TRUE) {
+density_comparation <- function(data, out_dir = "plot/", save = TRUE) {
 
   # Assertions
   assertDataFrame(data)

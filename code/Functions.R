@@ -1,6 +1,6 @@
 
 # Function that computes Kvalue index for imputed data
-calculate.kvalue <- function(df) {
+calculate_kvalue <- function(df) {
 
   # Assertions
   assertDataFrame(df)
