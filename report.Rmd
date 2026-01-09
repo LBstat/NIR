@@ -7,11 +7,46 @@ output: html_document
 
 ### *Introduction and study objectives*
 
+Researchers from the Faculty of Veterinary Medicine at the University of Milan conducted a preliminary study aimed at evaluating the applicability of NIR (Near Infrared Reflectance) spectroscopy for the identification and classification of perishable fresh meats. The NIR method is based on the use of infrared light and it is characterized by rapid, non-destructive measurements that are harmless to the sample.
+The light energy emitted by the spectrometer stimulates the vibrations of chemical bonds within the molecules: these vibrations, which are unique to each type of compound, generate a characteristic spectrum that can be regarded as a true “fingerprint” of the analyzed sample.
+
 ### *Main objectives*
+
+Based on previous preliminary studies, this study aims to:
+1. Investigate the existence of a relationship between the spectral data obtained using the NIR method and the K-value, defined as the ratio between the concentration of inosine monophosphate (IMP) and its degradation products (inosine + hypoxanthine), which is used to assess the freshness of fish and meat. The K-value (freshness index) is defined as:
+
+$$
+K(\%) = \frac{[Inosine] + [Hypoxanthine]}{[ATP] + [ADP] + [AMP] + [IMP] + [Inosine] + [Hypoxanthine]} \times 100
+$$
+where:
+
+- $ATP$ = adenosine triphosphate
+- $ADP$ = adenosine diphosphate
+- $AMP$ = adenosine monophosphate
+- $IMP$ = inosine monophosphate
+- $Inosine$ = nucleoside derived from IMP hydrolysis
+- $Hypoxanthine$ = final product of inosine degradation
+
+2. Assess the ability of the NIR method to accurately distinguish fresh, marketable filets from those no longer suitable for sale.
+
+Data collection was carried out between May and June 2025 on a total of 49 gilthead seabream filets. For each filet, NIR measurements were taken at five different positions. The dataset includes the following variables:
+- Sample (filet ID)
+- L* (lightness)
+- a* (redness index)
+- b* (yellowness index)
+- C* (Chroma, derived from L*, a*, and b*)
+- h (Hue angle / tone)
+- Day (day the measurement was taken)
+- mg N/100g (volatile basic nitrogen concentration)
+- K-value (ratio of inosine monophosphate to inosine + hypoxanthine)
+- NIR wavelengths (spectral intensity measured at different wavelengths)
 
 # **Data analysis**
 
 ### *Data preparation and pre-processing*
+The original data were divided into two datasets: one with filet lightness measurements and NIR spectra, and the other with chemical components used to compute the K-value, the summary index for freshness classification.
+Measurements were taken at five filet positions, and the resulting distributions were often skewed (see graphs). To address this, we aggregated each sample’s measurements using the median, chosen for its robustness to outliers and asymmetric distributions.
+This approach removed intra-sample dependencies and minimized potential collinearities, improving the reliability of the classification model training.
 
 ```{r exploration.1, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 source("settings.R")
@@ -22,10 +57,14 @@ if (!file.exists("data/intermediate/data analysis.rds")) {
 }
 
 data_analysis <- readRDS("data/intermediate/data analysis.rds")
+flextable(as.data.frame(head(data_analysis[,1:20])))
 
 knitr::include_graphics("plot/densities1.png")
 knitr::include_graphics("plot/densities2.png")
 ```
+
+The K-value index contained numerous missing values (NA) due to the absence of some variables required for its calculation. The pattern of missing values was determined to be conditionally random (MAR – Missing at Random), a scenario that allows the use of data imputation techniques.
+Since the distribution of the index and its components was not normal, Predictive Mean Matching (PMM) was employed. PMM is a non-parametric method that, using predictive variables, estimates missing values while ensuring that the imputed values remain within the observed range of the variable. By incorporating a random variability component, PMM also preserves the original distribution of the variable with missing values, producing realistic approximations.
 
 ```{r exploration.2, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 pattern <- "^[[:digit:]]*$"
@@ -50,7 +89,7 @@ ks_distances <- vapply(imputed_Kvalues, function(x) {
   ks.test(real_vals, imputed_vals)$statistic
 }, numeric(1))
 
-best_idx <- which.min(unname(ks.distances))
+best_idx <- which.min(unname(ks_distances))
 cat(paste0("Statistical Distribution (KS-Test): Dataset ", best_idx, " is the most faithful to the original data shape."))
 
 trend_errors <- vapply(imputed_Kvalues, function(x) {
@@ -67,8 +106,10 @@ cat(paste0("Biological Trend (MSE-Linear): Dataset ", best_idx, " is the most co
 complete_data <- complete(imp, "long")
 
 flextable(as.data.frame(cor(complete_data[, -c(14, 15)], use = "complete.obs")))
-flextable(as.data.frame(cor(data_for_imputation[, -7], use = "complete.obs")))
 ```
+
+To select the imputed dataset most similar to the original, distribution tests (Kolmogorov–Smirnov test) were performed. Given the linear relationship between days and K-value, linear regression models were also fitted, and the mean squared error (MSE) of the imputed observations was calculated.
+Furthermore, as shown by the comparison of correlation matrices computed on the original data (table 1) and on the imputed data (table 2), the correlations remained largely unchanged. This confirms that, overall, the imputation did not introduce distortions that could compromise the subsequent analyses.
 
 ```{r exploration.3, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 imputed_df <- lapply(seq_len(m), function(i) {
@@ -85,14 +126,24 @@ knitr::include_graphics("plot/imputation_2_Kvalue.png")
 knitr::include_graphics("plot/imputation_5_Kvalue.png")
 
 data_imputated <- imputed_df[[5]]
+flextable(as.data.frame(head(data_imputated), n = 10))
 ```
+
+A graphical analysis (see figure) was performed on the two best candidate datasets (datasets 2 and 5) to verify the actual overlap between the distributions of the original and imputed data. Based on this analysis, the final choice fell on dataset 5. The K-value index was finally computed on the complete dataset and used as the classification threshold for the fish samples.
+The thresholds chosen to classify the filets in this preliminary analysis were based on values reported in the literature: 
+- 0.2 for high-quality fish suitable for raw consumption
+- 0.2 - 0.5 for good/acceptable fish
+- 0.5 - 0.7 for fish beginning to deteriorate
+- above 0.7 for spoiled fish
+
+Given the small sample size, the categories were further simplified, adopting a very conservative approach by classifying all fish with a K-value above 0.5 as non-marketable.
 
 ```{r exploration.3, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 data_imputated$class <- ifelse(data_imputated$`K value` < 0.2, "very fresh",
   ifelse(data_imputated$`K value` <= 0.5, "good/acceptable", "impending spoilage/spoiled"))
 
 data_imputated$class <- as.factor(data_imputated$class)
-table(data_imputated$class)
+flextable(as.data.frame(table(data_imputated$class)))
 
 ggplot(data_imputated, aes(x = `K value`, fill = class)) +
   geom_histogram(position = "identity", alpha = 0.8, bins = 30) +
@@ -109,6 +160,8 @@ ggplot(data_imputated, aes(x = `K value`, fill = class)) +
     panel.grid.minor = element_blank())
 ```
 
+Pursuing the primary objective of the study, the NIR spectra were smoothed and normalized for each sample, removing background noise while maintaining the independence of individual samples. As shown in the figure, this procedure successfully highlighted the most informative regions of the spectra.
+
 ```{r exploration.4, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 data_cluster <- data_analysis |> dplyr::select(grep("^[[:digit:]]*$", colnames(data_analysis), value = TRUE))
 colnames(data_cluster) <- paste0("V", colnames(data_cluster))
@@ -116,21 +169,14 @@ colnames(data_cluster) <- paste0("V", colnames(data_cluster))
 data_cluster_smooth <- smoothing(data_cluster)
 data_cluster_snv <- as_tibble(t(apply(data_cluster_smooth, MARGIN = 1, FUN = normalization)))
 
-plot_spectral_comparison(data_cluster, data_cluster_snv, n_samples = 6)
+plot_spectral_comparison(data_cluster, data_cluster_snv)
 knitr::include_graphics("plot/spectral_smoothing_comparison.png")
 
 data_cluster_final <- bind_cols(data_cluster_snv, class = as.factor(data_imputated$class))
 ```
 
-- large dataset, 5 measure position equivalent to each other (as seen in the hraphic, densities have are not symmetric), aggregation through median sample value. 
-- variables used for imputation not normal (kolmogorov-smirnov test), so pmm best imputation method
-- missing values (MAR) - imputation of missing trhough predictive mean matching (10 dataset imputaed, best dataset choosen - see graphic, imputed values for k-value overlapping the best)
-- spectral measures aggregated through median, smoothed by taking 
-- classification of samples thanks to kvalue - very fresh, fresh, deteriorated, very deteriorated
-
 ### *Correlation vs. feature selection*
-
--discussion about why feature seleciton is better than correlation
+Rather than focusing on the correlation between wavelengths and the K-value, we opted to select the raw variables with the highest discriminative power based on metrics such as AUC, ANOVA, or MRMR. The comparison of these indices yielded a consistent result, identifying specific wavelengths—particularly those in the 1400–1500 µm range—with the ability to distinguish classes effectively, achieving an AUC of up to 80%.
 
 ```{r features, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 task <- TaskClassif$new(
@@ -145,12 +191,13 @@ task$col_roles$stratum <- "class"
 methods <- c("anova", "auc", "mrmr")
 tab <- as.data.frame(lapply(methods, function(i) feature_selection(task, i)))
 colnames(tab) <- methods
-head(tab)
+flextable(head(tab))
 ```
 
--auc and anova confirms some interesting features, we expect algorithm to choose similar features
+The model selection focused on two parametric models (LDA and QDA) and two non-parametric models (k-NN and SVM). Given the available sample size, the training of these models was carefully structured to minimize distorted results, bias, or data leakage.
+Each model performs variable normalization, class balancing, and variable selection for target classification using internal 5-fold cross-validation. Model performance is then evaluated via outer 5-fold cross-validation. Comparability across models is ensured by using the same splits for the outer cross-validation.
 
-### *QDA, LDA, k-NN and SVM on raw data (scaled and balanced) components*
+### *Model performance and feature analysis*
 
 ```{r analysis.1, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 set.seed(123)
@@ -191,21 +238,19 @@ autoplot(results1$benchmark_obj, type = "roc") +
     panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
     panel.grid.minor = element_blank())
 
-results1$learners$LDA$learner$graph_model$pipeops$feat_select$state$outtasklayout
-results1$learners$QDA$learner$graph_model$pipeops$feat_select$state$outtasklayout
-results1$learners$kNN$learner$graph_model$pipeops$feat_select$state$outtasklayout
-results1$learners$SVM$learner$graph_model$pipeops$feat_select$state$outtasklayout
-
 results1$confusion$QDA
-
 results1$learners$QDA$learner$model$classif.qda$model
 ```
 
-### *Model deficencies discussion*
+The classification models were evaluated at a K-value threshold of 0.5. The results indicate that Quadratic Discriminant Analysis (QDA) is the best-performing model, achieving an accuracy of 81.9% and a specificity of 93.3%. The “Accuracy stability between folds” plot shows that QDA not only has the highest median accuracy among the tested learners but also exhibits minimal variability across folds, indicating robust and stable performance.
+Feature selection consistently identified the variable V1459 as the most discriminative. All tested models (LDA, QDA, and k-NN) selected this wavelength, highlighting its biophysical relevance: the distinction between fresh and deteriorated fish appears to manifest as a change in the distribution shape at this spectral region. The group means for V1459 show a clear separation (0.201 for fresh fish vs. –0.641 for deteriorated), enabling QDA to define a sharp decision boundary.
+Analysis of the confusion matrix confirms the reliability of QDA. Only one deteriorated sample was misclassified as fresh, ensuring minimal risk for food safety applications. Eight fresh samples were classified as deteriorated, reflecting a conservative model design that prioritizes avoiding false negatives over false positives.
+In contrast, SVM, which included eight variables in the range V1387–V1480, achieved substantially lower accuracy (60.9%). This indicates that adding multiple correlated variables introduced noise and reduced model performance, confirming that, in this dataset, a single well-chosen variable (V1459) is sufficient for optimal classification.
+
+### *Analysis of the Day 10 Outlier*
 
 ```{r results.1, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 preds <- as.data.table(results1$resampling$QDA$prediction())
-preds[, .(row_ids, truth, response,`prob.good/acceptable` = round(`prob.good/acceptable`, digits = 4), `prob.impending spoilage/spoiled` = round(`prob.impending spoilage/spoiled`, digits = 4))]
 
 false_positive_idx <- preds[truth == "impending spoilage/spoiled" & response == "good/acceptable", row_ids]
 
@@ -213,16 +258,29 @@ data_wrong <- data_imputated[false_positive_idx, ]
 
 errors <- data.frame(
   row_ID = false_positive_idx,
-  day = data_wrong$day
+  day = data_wrong$day,
+  `K value` = data_wrong$`K value`
   )
 
 cat("Spoiled samples classified as Fresh (false positives)")
-print(errors)
-
-data_imputated[errors$row_ID,]$`K value`
+flextable(errors)
 ```
 
-### New Kvalue limit
+A misclassification occurred for a sample on Day 10 with a K-value of 0.80. This case is particularly interesting because, from a chemical perspective, it is a “gross” error—the fish is objectively spoiled—but it is fully explainable from the physical perspective of the NIR instrument.
+
+1. Surface vs. Bulk Discrepancy (Heterogeneity)
+The NIR sensor penetrates only a few millimeters into the muscle, whereas the K-value is measured on a homogenized portion of tissue. If the Day 10 sample experienced accelerated internal degradation (K = 0.80) but the surface scanned by the instrument remained apparently intact—due to differences in air exposure or the presence of a thin ice/water layer—the NIR reading would reflect a “good” spectral signature.
+
+2. V1459 Anomaly (Apparent Water State)
+The model relies almost entirely on V1459, which is associated with O-H bonds in water and N-H bonds in proteins. If this specific sample had abnormal surface dehydration or, conversely, excess exudate, the V1459 value could have coincidentally fallen within the “Good” range. In the Group Means, the “Good” class has a mean of 0.201, while “Spoiled” is –0.641. It is likely that the Day 10 sample produced a positive spectral value near 0.2, misleading the QDA classifier.
+
+3. Instrumental Factors (Positioning or Stray Light)
+If the NIR sensor is not perfectly in contact with the filet or stray light is present, the recorded spectrum can shift. Since the model uses scaled data, an anomalous change in overall spectral intensity can cause V1459 to take an erroneously standardized value, falling within the “Good” region of the QDA decision boundary.
+
+In the confusion matrix, this sample represents the only false negative: predicted “Good” against true class “Impending spoilage/Spoiled.” Among 11 truly deteriorated samples, the model correctly classified 10, demonstrating very high specificity. This single misclassification does not invalidate the model but highlights a physical limitation: NIR does not measure K-value directly; it detects the physical consequences of degradation. If the muscle surface appears intact, NIR cannot detect internal chemical decomposition.
+
+### *New K value treshold*
+Having established the near-optimal discriminative ability of wavelength V1459, the K-value threshold used for sample classification was subsequently lowered. By shifting the threshold for high-quality samples to 0.4 instead of 0.5, the analysis focused on a fresher subset of samples in order to assess whether model performance and stability would undergo significant changes.
 
 ```{r analysis.1.1, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 data_imputated$class <- ifelse(data_imputated$`K value` < 0.2, "very fresh",
@@ -230,7 +288,7 @@ data_imputated$class <- ifelse(data_imputated$`K value` < 0.2, "very fresh",
 
 data_cluster_final <- data_cluster_final |> dplyr::select(!class)
 data_cluster_final <- bind_cols(data_cluster_final, class = as.factor(data_imputated$class))
-table(data_cluster_final$class)
+flextable(as.data.frame(table(data_cluster_final$class)))
 
 task <- TaskClassif$new(
   id = "Classification original data",

@@ -129,7 +129,7 @@ density_comparation <- function(data, out_dir = "plot/", save = TRUE) {
   invisible(p)
 }
 
-plot_spectral_comparison <- function(raw_data, smoothed_data, n_samples = 5, out_dir = "plot/", save = TRUE) {
+plot_spectral_comparison <- function(raw_data, smoothed_data, n_samples = 6, out_dir = "plot/", save = TRUE) {
 
   # Assertions
   assertDataFrame(raw_data)
