@@ -1,9 +1,5 @@
----
-title: "README: Fish Freshness Classification via NIR Spectroscopy"
-author: "Luca Bernardi"
-date: "2026-01-10"
-output: html_document
----
+
+# Fish Freshness Classification via NIR Spectroscopy
 
 ## **Project Overview**
 
@@ -23,7 +19,7 @@ categories non-destructively.
 
 2. Premium Threshold (K=0.4): Isolating peak-quality fillets for high-end markets.
 
-### Data Engineering & Pre-processing
+### **Data Engineering & Pre-processing**
 
 1. Robust Aggregation and Imputation:
 
@@ -35,7 +31,7 @@ dehydration).
 approach preserves the original distribution of the data better than simple mean imputation, ensuring realistic
 approximations for the K-value components.
 
-[](plot/imputation_5_Kvalue.png)
+![](plot/imputation_5_Kvalue.png)
 
 2. Spectral Pre-processing (Smoothing & SNV)
 
@@ -49,7 +45,7 @@ it by its standard deviation, ensuring that the differences detected by the QDA 
 concentration (K-value) rather than the distance between the sensor and the fillet or the thickness of the
 sample.
 
-[](plot/spectral_smoothing_comparison.png)
+![](plot/spectral_smoothing_comparison.png)
 
 3. Feature Selection Logic
 
@@ -58,7 +54,7 @@ sample.
 - Premium Quality (0.4): Demonstrated that single-wavelength models collapse at this threshold, requiring a
 Multivariate PCA approach to capture subtle biochemical shifts.
 
-### Model Performance & Results
+### **Model Performance & Results**
 
 Threshold 0.5: Commercial Safety
 
@@ -69,7 +65,7 @@ Threshold 0.5: Commercial Safety
 - Key Insight: The high specificity ensures a "Safe-to-Market" guarantee. The model is driven by the state of
 water and protein hydration in the tissue.
 
-[](plot/roc_curves1.png)
+![](plot/roc_curves1.png)
 
 Threshold 0.4: Premium Quality (Optimized PCA):
 
@@ -80,7 +76,7 @@ Threshold 0.4: Premium Quality (Optimized PCA):
 2250–2300 nm region. This region is critical for detecting changes in protein conformation and nitrogenous
 metabolites—the true markers of "Premium" vs. "Acceptable" fish.
 
-[](plot/pca_scatterplot.png)
+![](plot/pca_scatterplot.png)
 
 The table below summarizes the classification success for both investigated thresholds using the optimized
 Quadratic Discriminant Analysis (QDA) model.
@@ -94,7 +90,7 @@ Quadratic Discriminant Analysis (QDA) model.
 | **AUC** | 0.801 | **0.748** |
 | **Dominant Marker** | Water/Protein hydration (1459nm) | Protein/Ammino acid bonds (2250nm) |
 
-### Residual analysis: understanding the errors
+### **Residual analysis: understanding the errors**
 
 The models were built with a conservative bias, prioritizing the removal of sub-par fish over the risk
 of false "Premium" labels.
