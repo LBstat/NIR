@@ -587,7 +587,7 @@ kableExtra::kable(result_final$confusion_matrix, caption = "Table 17: Optimized 
 bmr <- as_benchmark_result(result_final$resampling_results)
 
 if (!file.exists("plot/accuracy_stability4.png")) {
-  plot_benchmark_results(results1$benchmark_obj)
+  plot_benchmark_results(bmr)
 }
 
 knitr::include_graphics("plot/accuracy_stability4.png")
