@@ -45,7 +45,7 @@ it by its standard deviation, ensuring that the differences detected by the QDA 
 concentration (K-value) rather than the distance between the sensor and the fillet or the thickness of the
 sample.
 
-![](plot/PCA_loadings.png)
+![](plot/spectral_smoothing_comparison.png)
 
 3. Feature Selection Logic
 
@@ -76,7 +76,7 @@ Threshold 0.4: Premium Quality (Optimized PCA):
 2250–2300 nm region. This region is critical for detecting changes in protein conformation and nitrogenous
 metabolites—the true markers of "Premium" vs. "Acceptable" fish.
 
-![](plot/pca_scatterplot.png)
+![](plot/PCA_loadings.png)
 
 The table below summarizes the classification success for both investigated thresholds using the optimized
 Quadratic Discriminant Analysis (QDA) model.
