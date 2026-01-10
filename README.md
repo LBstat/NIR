@@ -45,7 +45,7 @@ it by its standard deviation, ensuring that the differences detected by the QDA 
 concentration (K-value) rather than the distance between the sensor and the fillet or the thickness of the
 sample.
 
-![](plot/spectral_smoothing_comparison.png)
+![](plot/PCA_loadings.png)
 
 3. Feature Selection Logic
 

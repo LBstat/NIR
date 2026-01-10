@@ -517,7 +517,7 @@ loadings_long <- loadings_df |>
     values_to = "Weight"
   ) |> mutate(PC = factor(PC, levels = paste0("PC", 1:12)))
 
-ggplot(loadings_long, aes(x = wavelength, y = Weight, color = PC)) +
+p <- ggplot(loadings_long, aes(x = wavelength, y = Weight, color = PC)) +
   geom_line(show.legend = FALSE) +
   facet_wrap(~PC, scales = "free_y", ncol = 3) +
   labs(
@@ -532,6 +532,9 @@ ggplot(loadings_long, aes(x = wavelength, y = Weight, color = PC)) +
     panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
     panel.grid.minor = element_blank(), legend.position = "top", legend.title = element_text(face = "bold")
   )
+
+ggsave(filename = "plot/PCA_loadings.png", plot = p, width = 12, height = 6, dpi = 300)
+knitr::include_graphics("plot/PCA_loadings.png")
 ```
 
 Inspection of PCA loadings clarifies the nature of the discriminative information. The first three PCs capture dominant physical effects related to water content and muscle structure, with strong features around 1450 nm and 1900–2000 nm. In contrast, intermediate components—particularly PC6 and PC7—exhibit narrower and more specific peaks linked to lipid (C–H) and protein (N–H) combination bands. These components appear critical for distinguishing premium-quality fish, as they reflect early biochemical changes rather than gross physical differences. Later components mainly represent instrumental noise, with only weak residual signals related to advanced spoilage.
