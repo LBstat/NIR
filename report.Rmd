@@ -2,7 +2,6 @@
 title: "Non-Destructive Freshness Assessment in Fish Fillets via NIR Spectroscopy: Multivariate Optimization and K-value Classification Strategies"
 author: "Luca Bernardi"
 date: "2026-01-10"
-output: html_document
 ---
 
 ## **Introduction**
