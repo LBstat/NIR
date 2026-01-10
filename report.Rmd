@@ -2,15 +2,16 @@
 title: "Non-Destructive Freshness Assessment in Fish Fillets via NIR Spectroscopy: Multivariate Optimization and K-value Classification Strategies"
 author: "Luca Bernardi"
 date: "2026-01-10"
+output: html_document
 ---
 
 ## **Introduction**
 
-### *Introduction and study objectives*
+### Introduction and study objectives
 
 Researchers from the Faculty of Veterinary Medicine at the University of Milan conducted a preliminary study to evaluate the applicability of Near-Infrared Reflectance (NIR) spectroscopy for the identification and classification of perishable fresh fish products. NIR spectroscopy is a rapid, non-destructive analytical technique that is harmless to the sample and therefore well suited for routine quality control. The method relies on the interaction between near-infrared radiation and molecular bonds within the sample: the absorbed energy excites characteristic vibrational modes of chemical bonds, producing a spectrum that reflects the chemical and physical composition of the material and can be interpreted as a spectral “fingerprint.”
 
-### *Main objectives*
+### Main objectives
 
 Building on previous exploratory investigations, the objectives of this study were twofold:
 
@@ -54,7 +55,7 @@ Data were collected between May and June 2025 on a total of 49 gilthead seabream
 
 ## **Data analysis**
 
-### *Data preparation and pre-processing*
+### Data preparation and pre-processing
 The experimental data were organized into two distinct datasets: the first containing fillet lightness measurements and NIR spectra, and the second comprising the chemical components required to calculate the K-value, the reference index for freshness classification. Measurements were acquired at five different positions on each fillet. Due to the skewed nature of the resulting distributions, data were aggregated using the median for each sample. This choice ensured robustness against outliers and asymmetric distributions, effectively removing intra-sample dependencies and minimizing collinearity to improve the reliability of subsequent model training.
 
 ```{r exploration.1, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
@@ -200,7 +201,7 @@ knitr::include_graphics("plot/spectral_smoothing_comparison.png")
 data_cluster_final <- bind_cols(data_cluster_snv, class = as.factor(data_imputated$class))
 ```
 
-### *Correlation vs. feature selection*
+### Correlation vs. feature selection
 Rather than focusing on simple correlations between individual wavelengths and the K-value, feature selection was driven by discriminative performance. Raw spectral variables were ranked using metrics such as AUC, ANOVA, and MRMR. All criteria converged on a restricted set of informative wavelengths, with the region between 1400 and 1500 nm emerging as particularly relevant. Selected variables in this range achieved AUC values of up to 80% (Table 6).
 
 ```{r features, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
@@ -228,7 +229,7 @@ Model development considered two parametric classifiers (LDA and QDA) and two no
 
 Let $\{(x_i, y_i)\}_{i=1}^n$ be a training dataset, where $x_i \in \mathbb{R}^p$ denotes the vector of predictors (e.g. NIR wavelengths or principal components) and $y_i \in \{1,\dots,K\}$ is the corresponding class label.
 
-### *k-Nearest Neighbors (k-NN)*
+### k-Nearest Neighbors (k-NN)
 
 Given a new observation $x$, let $\mathcal{N}_k(x)$ denote the set of the $k$ nearest training points to $x$, typically computed using the Euclidean distance:
 $$
@@ -242,7 +243,7 @@ $$
 where $\mathbb{I}(\cdot)$ is the indicator function.
 k-NN is a non-parametric, instance-based classifier that makes no assumptions about the underlying data distribution. Its bias–variance trade-off is controlled by the choice of $k$: small values of $k$ produce highly flexible decision boundaries with low bias and high variance, whereas larger values yield smoother boundaries at the cost of increased bias. The method is sensitive to noise and suffers from the curse of dimensionality, making feature scaling and dimensionality reduction critical in high-dimensional settings such as NIR spectroscopy.
 
-### *Linear Discriminant Analysis (LDA)*
+### Linear Discriminant Analysis (LDA)
 
 LDA assumes that the conditional distribution of the predictors is multivariate normal within each class:
 $$
@@ -259,7 +260,7 @@ $$
 where $\pi_c$ denotes the prior probability of class $c$.
 LDA is a parametric classifier with linear decision boundaries. When the assumptions of multivariate normality and equal covariance matrices are approximately satisfied, LDA provides stable and statistically efficient classification, particularly in small-sample scenarios. Performance degrades when class covariances differ substantially or when class separation is inherently non-linear.
 
-### *Quadratic Discriminant Analysis (QDA)*
+### Quadratic Discriminant Analysis (QDA)
 
 QDA relaxes the equal-covariance assumption of LDA, allowing each class to have its own covariance matrix:
 $$
@@ -274,7 +275,7 @@ $$
 $$
 QDA is a parametric classifier with non-linear decision boundaries. By modeling class-specific covariance structures, it can capture heteroscedasticity and curved class separation. This added flexibility improves performance when class distributions differ in shape but increases variance and sensitivity to limited sample sizes. QDA is most effective when the number of predictors is small or when dimensionality has been reduced.
 
-### *Support Vector Machine (SVM)*
+### Support Vector Machine (SVM)
 
 For binary classification with labels $y_i \in \{-1, +1\}$, SVM estimates the separating hyperplane by solving:
 $$
@@ -298,7 +299,7 @@ $$
 where $K(\cdot,\cdot)$ is a kernel function (e.g. linear or radial basis function).
 SVM is a discriminative, margin-based classifier that relies on a subset of training observations (support vectors) near the class boundary. It performs well in high-dimensional spaces and is robust to overfitting when properly regularized. However, it does not explicitly model class distributions and can be sensitive to correlated features, kernel choice, and hyperparameter tuning.
 
-### *Comparative summary*
+### Comparative summary
 
 - **k-NN**: flexible and assumption-free, but sensitive to dimensionality and noise
 
@@ -308,7 +309,7 @@ SVM is a discriminative, margin-based classifier that relies on a subset of trai
 
 - **SVM**: powerful boundary-based method, effective in high dimensions but sensitive to feature correlation and kernel specification.
 
-### *Model performance and feature analysis*
+### Model performance and feature analysis
 
 ```{r analysis.1, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 set.seed(123)
@@ -338,7 +339,7 @@ Feature selection consistently highlighted wavelength V1459 as the most discrimi
 
 The confusion matrix (Table 8) confirms the conservative and reliable nature of the QDA classifier. Only one deteriorated sample was misclassified as fresh, minimizing food safety risk. Conversely, eight fresh samples were classified as deteriorated, reflecting a deliberate preference for false positives over false negatives. In contrast, SVM—using eight correlated variables in the V1387–V1480 range—achieved substantially lower accuracy (60.9%), indicating that the inclusion of multiple correlated features introduced noise rather than improving discrimination. In this dataset, a single well-chosen wavelength proved more effective than a broader multivariate input.
 
-### *Analysis of the Day 10 Outlier*
+### Analysis of the Day 10 Outlier
 
 ```{r results.1, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 preds <- as.data.table(results1$resampling$QDA$prediction())
@@ -368,7 +369,7 @@ Finally, instrumental factors such as imperfect probe contact or stray light may
 
 This sample represents the only false negative among 11 truly deteriorated samples, yielding very high specificity. Rather than undermining the model, this case highlights a fundamental limitation: NIR does not measure chemical spoilage directly, but its physical manifestations at the surface. When surface properties remain deceptively intact, internal chemical degradation may go undetected.
 
-### *Analysis of Model Performance at K-value Threshold 0.4*
+### Analysis of Model Performance at K-value Threshold 0.4
 
 ```{r analysis.1.1, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 data_imputated$class <- ifelse(data_imputated$`K value` < 0.2, "very fresh",
@@ -428,7 +429,7 @@ Feature selection also became fragmented. Whereas all models converged on V1459 
 
 These results show that lowering the threshold exposes the limits of single-variable models when attempting to distinguish very fresh fish, where biochemical differences are subtle and not strongly expressed in individual wavelengths.
 
-### *Implications of Lowering the Threshold to 0.4*
+### Implications of Lowering the Threshold to 0.4
 
 ```{r results.1.1, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 preds <- as.data.table(results1.1$resampling$QDA$prediction())
@@ -450,7 +451,7 @@ kableExtra::kable(errors, caption = "Table 12: Spoiled samples classified as Fre
 
 A K-value threshold of 0.4 effectively reframes the instrument as a tool for certifying premium-quality fish. In this context, misclassifications concentrate in the 0.40–0.49 range, corresponding mainly to samples from Days 4 to 8. These samples represent a biochemical transition phase: although their physical appearance remains largely intact, they have already surpassed the threshold of maximal freshness. This overlap inherently increases classification difficulty and emphasizes the limits of surface-based spectral measurements.
 
-### *Principal Component Analysis*
+### Principal Component Analysis
 
 ```{r analysis.2, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 pca_res <- prcomp(data_cluster_final[, -141], center = TRUE, scale. = TRUE)
@@ -483,7 +484,7 @@ QDA again emerged as the best classifier, reaching an accuracy of 69.4% and an A
 
 Stability analysis confirmed that, while PCA improves average performance, variability across folds remains higher than at the 0.5 threshold. ROC curves further showed that QDA maintains the best balance between sensitivity and specificity, whereas SVM remains close to random performance.
 
-### *Interpretation of PCA Loadings for Premium-Quality Classification*
+### Interpretation of PCA Loadings for Premium-Quality Classification
 
 ```{r results.3, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 loadings_df <- as.data.frame(pca_res$rotation[, 1:12])
@@ -515,7 +516,7 @@ ggplot(loadings_long, aes(x = wavelength, y = Weight, color = PC)) +
 
 Inspection of PCA loadings clarifies the nature of the discriminative information. The first three PCs capture dominant physical effects related to water content and muscle structure, with strong features around 1450 nm and 1900–2000 nm. In contrast, intermediate components—particularly PC6 and PC7—exhibit narrower and more specific peaks linked to lipid (C–H) and protein (N–H) combination bands. These components appear critical for distinguishing premium-quality fish, as they reflect early biochemical changes rather than gross physical differences. Later components mainly represent instrumental noise, with only weak residual signals related to advanced spoilage.
 
-### *Optimized QDA Performance Using Principal Components*
+### Optimized QDA Performance Using Principal Components
 
 ```{r analysis.3, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 pc_pool <- paste0("PC", 1:8)
@@ -570,7 +571,7 @@ An optimized QDA model using PCs 1, 2, 3, 4, 6, and 7 achieved the best overall 
 
 Unlike the 0.5 threshold scenario, this model does not simply detect spoilage but identifies the loss of premium quality. The prominence of PC6 and PC7 confirms that this transition is driven by subtle biochemical changes, particularly in proteins and lipids, which require a multivariate and non-linear model to be captured effectively.
 
-### *Error Analysis and Threshold Effects*
+### Error Analysis and Threshold Effects
 
 ```{r results.4, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 12}
 preds <- as.data.table(result_final$resampling_result$prediction())
