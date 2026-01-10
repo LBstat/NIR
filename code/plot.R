@@ -24,35 +24,41 @@ graphical_comparation <- function(imputed_data, imputed_pos, x, y, x_ignore = FA
          x = paste0(x),
          y = paste0(y),
          color = "Type") +
-    theme_minimal() +
+    theme_minimal(base_size = 12) +
     theme(
-      axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
-      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5, size = 12, face = "bold"),
+      axis.title = element_text(size = 12), axis.text = element_text(size = 10),
       panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
-      panel.grid.minor = element_blank())
+      panel.grid.minor = element_blank(), legend.position = "top", legend.title = element_text(face = "bold")
+    )
 
   if (!x_ignore) {
   p2 <- ggplot(imputed_data, aes(x = .data[[x]], fill = type)) +
     geom_density(alpha = 0.5) +
     scale_fill_manual(values = c("real" = "#003366", "imputed" = "#9B1B30")) +
-    theme_minimal() +
+    theme_minimal(base_size = 12) +
     theme(
-      axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
-      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5, size = 12, face = "bold"),
+      axis.title = element_text(size = 12), axis.text = element_text(size = 10),
       panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
-      panel.grid.minor = element_blank())
+      panel.grid.minor = element_blank(), legend.position = "top", legend.title = element_text(face = "bold")
+    )
   }
 
   if (!y_ignore) {
   p3 <- ggplot(imputed_data, aes(x = .data[[y]], fill = type)) +
     geom_density(alpha = 0.5) +
     scale_fill_manual(values = c("real" = "#003366", "imputed" = "#9B1B30")) +
-    theme_minimal() +
+    theme_minimal(base_size = 12) +
     theme(
-      axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
-      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5, size = 12, face = "bold"),
+      axis.title = element_text(size = 12), axis.text = element_text(size = 10),
       panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
-      panel.grid.minor = element_blank())
+      panel.grid.minor = element_blank(), legend.position = "top", legend.title = element_text(face = "bold")
+    )
   }
 
   if (x_ignore) {
@@ -93,37 +99,17 @@ density_comparation <- function(data, out_dir = "plot/", save = TRUE) {
     labs(title = "Variable density",
          x = "Value",
          y = "Density") +
-    theme_minimal() +
+    theme_minimal(base_size = 12) +
     theme(
-      axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
-      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5, size = 12, face = "bold"),
+      axis.title = element_text(size = 12), axis.text = element_text(size = 10),
       panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
-      panel.grid.minor = element_blank())
+      panel.grid.minor = element_blank(), legend.position = "top", legend.title = element_text(face = "bold")
+    )
 
-  pattern <- "densities([0-9]+)\\.png"
-
-  existing.files <- list.files("plot/", pattern = pattern)
   if (save) {
-    if (length(existing.files) == 0) {
-      ggsave(
-        filename = file.path(out_dir, "densities1.png"),
-        plot = p,
-        width = 12,
-        height = 6,
-        dpi = 300
-      )
-    } else {
-      value <- vapply(existing.files, function(x) {
-        as.numeric(regmatches(x, regexec(pattern, x, perl = TRUE))[[1]][[2]])
-      }, numeric(1))
-      ggsave(
-        filename = file.path(out_dir, paste0("densities", max(value) + 1, ".png")),
-        plot = p,
-        width = 12,
-        height = 6,
-        dpi = 300
-      )
-    }
+    save_plot(p, "densities")
   }
 
   invisible(p)
@@ -137,10 +123,12 @@ plot_spectral_comparison <- function(raw_data, smoothed_data, n_samples = 6, out
   assertString(out_dir)
   assertFlag(save)
 
+  if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
+
   # Random selecting rows
   set.seed(123)
   sample_ids <- sample(seq_len(nrow(raw_data)), n_samples)
-  
+
   # Add an ID column and pivot both to long format
   prepare_long <- function(df, type_label) {
     df |> mutate(sample_id = as.factor(row_number())) |>
@@ -151,10 +139,10 @@ plot_spectral_comparison <- function(raw_data, smoothed_data, n_samples = 6, out
 
   df_raw <- prepare_long(raw_data, "raw")
   df_smooth <- prepare_long(smoothed_data, "smoothed")
-  
+
   # Combine datasets
   df_plot <- bind_rows(df_raw, df_smooth)
-  
+
   # Create the plot
   p <- ggplot(df_plot, aes(x = wavelength, y = intensity, color = type, alpha = type)) +
     geom_line(aes(group = interaction(sample_id, type)), size = 0.8) +
@@ -166,15 +154,15 @@ plot_spectral_comparison <- function(raw_data, smoothed_data, n_samples = 6, out
       subtitle = paste("Showing", n_samples, "randomly selected spectra"),
       x = "Wavelength / wavenumber",
       y = "Absorbance / intensity",
-      color = "data state",
-      alpha = "data state"
     ) +
-    theme_minimal() +
+    theme_minimal(base_size = 12) +
     theme(
-      axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
-      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5, size = 12, face = "bold"),
+      axis.title = element_text(size = 12), axis.text = element_text(size = 10),
       panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
-      panel.grid.minor = element_blank())
+      panel.grid.minor = element_blank(), legend.position = "top", legend.title = element_text(face = "bold")
+    )
 
   if (save) {
     ggsave(
@@ -189,6 +177,37 @@ plot_spectral_comparison <- function(raw_data, smoothed_data, n_samples = 6, out
   invisible(p)
 }
 
+plot_benchmark_results <- function(benchmark_obj, out_dir = "plot/", save = TRUE) {
+
+  # Assertions
+  assertClass(benchmark_obj, "BenchmarkResult")
+
+  if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
+
+  common_theme <- theme_minimal(base_size = 12) +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+      axis.title = element_text(size = 12), axis.text = element_text(size = 10),
+      panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
+      panel.grid.minor = element_blank(), legend.position = "top", legend.title = element_text(face = "bold")
+    )
+
+  p_auc <- autoplot(benchmark_obj, measure = msr("classif.auc")) +
+    labs(title = "AUC stability between folds") + common_theme
+  p_acc <- autoplot(benchmark_obj, measure = msr("classif.acc")) +
+    labs(title = "Accuracy stability between folds") + common_theme
+  p_roc <- autoplot(benchmark_obj, type = "roc") +
+    labs(title = "ROC curves (mean between folds)") + common_theme
+
+  if (save) {
+    save_plot(p_auc, "auc_stability")
+    save_plot(p_acc, "accuracy_stability")
+    save_plot(p_roc, "roc_curves")
+  }
+
+  invisible(list(auc = p_auc, accuracy = p_acc, roc = p_roc))
+}
+
 pca_representation_facet <- function(pca.res, class, j, out_dir = "plot/", save = TRUE) {
 
   # Assertions
@@ -197,6 +216,8 @@ pca_representation_facet <- function(pca.res, class, j, out_dir = "plot/", save 
   assertNumber(j, lower = 1)
   assertString(out_dir)
   assertFlag(save)
+
+  if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
   pca.df <- as.data.frame(pca.res$x[, 1:(2*j)])
   pca.df$class <- class
@@ -222,12 +243,13 @@ pca_representation_facet <- function(pca.res, class, j, out_dir = "plot/", save 
     geom_point(alpha = 0.8, size = 2.2) +
     facet_wrap(~ pair, scales = "free") +
     scale_color_manual(values = c("good/acceptable" = "#003366", "impending spoilage/spoiled" = "#9B1B30")) +
-    theme_minimal() +
+    theme_minimal(base_size = 12) +
     theme(
-      axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
-      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+      axis.title = element_text(size = 12), axis.text = element_text(size = 10),
       panel.grid.major = element_line(color = "lightgray", linewidth = 0.5),
-      panel.grid.minor = element_blank())
+      panel.grid.minor = element_blank(), legend.position = "top", legend.title = element_text(face = "bold")
+    )
 
   if (save) {
     ggsave(

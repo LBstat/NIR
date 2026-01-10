@@ -6,15 +6,15 @@ build_data_main <- function() {
   spectral_measures <- read_excel("data/raw/Spettri.xlsx")
 
   pattern <- "^[[:alpha:]]\\*?$"
-  data_for_compare <- data_lightness |> dplyr::select(grep(pattern, colnames(data.lightness), value = TRUE))
+  data_for_compare <- data_lightness |> dplyr::select(grep(pattern, colnames(data_lightness), value = TRUE))
 
   data_norm <- as_tibble(apply(data_for_compare[1:5, ], MARGIN = 2, FUN = normalization))
   data_long <- data_norm |> pivot_longer(cols = everything(), names_to = "variabile", values_to = "valore") 
 
-  density_comparation(data.long)
+  density_comparation(data_long)
 
   # Lightness data aggregation
-  data_lightness <- data_lightness |> dplyr::select(campione, grep(pattern, colnames(data.lightness), value = TRUE)) |>
+  data_lightness <- data_lightness |> dplyr::select(campione, grep(pattern, colnames(data_lightness), value = TRUE)) |>
     group_by(campione) |>
     summarize(L.mediana = median(`L*`),
               a.mediana = median(`a*`),
@@ -27,7 +27,7 @@ build_data_main <- function() {
   data_lightness <- data_lightness |> dplyr::select(!campione) |>
     mutate(day = ceiling(row_number() / 5))
 
-  data <- cbind(data, data.lightness)
+  data <- cbind(data, data_lightness)
 
   # Data entry mistake correction
   data$ADP[[31]] <- 0.0247096
@@ -51,19 +51,4 @@ build_data_main <- function() {
   data_analysis <- merge(data, spectral_measures)
 
   saveRDS(data_analysis, file = "data/intermediate/data analysis.rds")
-}
-
-# Function that explores different method for feature selection
-feature_selection <- function(task, filter = "auc") {
-
-  # Assertions
-  assertString(filter)
-  assertSubset(filter, choices = c("anova", "auc", "importance", "information_gain", "mrmr"))
-
-  # Selection
-  set.seed(123)
-  filter_selection = flt(filter)
-  filter_selection$calculate(task)
-
-  filter_selection$scores
 }

@@ -1,4 +1,27 @@
 
+# Auto-increment filename function
+save_plot <- function(plot_obj, base_name, out_dir = "plot/") {
+  pattern <- paste0(base_name, "([0-9]+)\\.png")
+  existing_files <- list.files(out_dir, pattern = pattern)
+  
+  if (length(existing_files) == 0) {
+    index <- 1
+  } else {
+    value <- vapply(existing_files, function(x) {
+      as.numeric(regmatches(x, regexec(pattern, x, perl = TRUE))[[1]][2])
+    }, numeric(1))
+    index <- max(value) + 1
+  }
+  
+  ggsave(
+    filename = file.path(out_dir, paste0(base_name, index, ".png")),
+    plot = plot_obj,
+    width = 12,
+    height = 6,
+    dpi = 300
+  )
+}
+
 # Function that computes Kvalue index for imputed data
 calculate_kvalue <- function(df) {
 
@@ -40,6 +63,21 @@ normalization <- function(x) {
   assertNumeric(x, any.missing = FALSE)
 
   (x - mean(x)) / sd(x)
+}
+
+# Function that explores different method for feature selection
+feature_selection <- function(task, filter = "auc") {
+  
+  # Assertions
+  assertString(filter)
+  assertSubset(filter, choices = c("anova", "auc", "importance", "information_gain", "mrmr"))
+  
+  # Selection
+  set.seed(123)
+  filter_selection = flt(filter)
+  filter_selection$calculate(task)
+  
+  filter_selection$scores
 }
 
 # Function that extracts data from lapply list results

@@ -1,28 +1,28 @@
 
-library(data.table)
-library(flextable)
+# General setting
 library(tidyverse)
-library(checkmate)
-library(patchwork)
-library(ggplot2)
 library(readxl)
+
+# Data manipulation and handling
+library(data.table)
+library(checkmate)
+library(signal)
 library(mice)
 
-library(mlr3benchmark)
-library(mlr3pipelines)
-library(mlr3learners)
-library(mlr3filters)
-library(mlr3tuning)
+# Data visualization
 library(mlr3viz)
-library(precrec)
-library(paradox)
-library(praznik)
-library(caret)
-library(kknn)
-library(mlr3)
+library(patchwork)
 
-library(chemometrics)
-library(prospectr)
-library(signal)
-library(utils)
-library(purrr)
+# Statistical analysis
+library(mlr3)
+library(praznik)
+library(precrec)
+library(mlr3benchmark)
+library(mlr3filters)
+library(mlr3pipelines)
+library(mlr3tuning)
+library(mlr3learners) 
+
+# Report
+library(kableExtra)
+
