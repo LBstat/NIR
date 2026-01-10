@@ -35,7 +35,7 @@ dehydration).
 approach preserves the original distribution of the data better than simple mean imputation, ensuring realistic
 approximations for the K-value components.
 
-[]plot/imputation_5_Kvalue.png
+[](plot/imputation_5_Kvalue.png)
 
 2. Spectral Pre-processing (Smoothing & SNV)
 
@@ -49,7 +49,7 @@ it by its standard deviation, ensuring that the differences detected by the QDA 
 concentration (K-value) rather than the distance between the sensor and the fillet or the thickness of the
 sample.
 
-[]plot/spectral_smoothing_comparison.png
+[](plot/spectral_smoothing_comparison.png)
 
 3. Feature Selection Logic
 
@@ -69,7 +69,7 @@ Threshold 0.5: Commercial Safety
 - Key Insight: The high specificity ensures a "Safe-to-Market" guarantee. The model is driven by the state of
 water and protein hydration in the tissue.
 
-[]plot/roc_curves1.png
+[](plot/roc_curves1.png)
 
 Threshold 0.4: Premium Quality (Optimized PCA):
 
@@ -80,14 +80,13 @@ Threshold 0.4: Premium Quality (Optimized PCA):
 2250–2300 nm region. This region is critical for detecting changes in protein conformation and nitrogenous
 metabolites—the true markers of "Premium" vs. "Acceptable" fish.
 
-[]plot/pca_scatterplot.png
+[](plot/pca_scatterplot.png)
 
 The table below summarizes the classification success for both investigated thresholds using the optimized
 Quadratic Discriminant Analysis (QDA) model.
 
 | Metric | Commercial Safety (0.5) | Premium Quality (0.4) |
 | :--- | :---: | :---: |
-| **Primary Goal** | Rejecting non-marketable fish | Selecting top-tier excellence |
 | **Input Strategy** | Univariate (**V1459**) | Multivariate (**PCs 1,2,3,4,6,7**) |
 | **Accuracy** | **81.9%** | **75.7%** |
 | **Specificity** | **93.3%** | **81.9%** |

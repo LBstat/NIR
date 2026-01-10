@@ -133,9 +133,11 @@ imputed_df <- lapply(seq_len(m), function(i) {
   df
 })
 
-graphics <- lapply(seq_along(imputed_df), function(i) {
+if (!file.exists("plot/imputation_1_Kvalue.png")) {
+  graphics <- lapply(seq_along(imputed_df), function(i) {
   graphical_comparation(imputed_df[[i]], imputed_pos = imputed_pos, x = "day", y = "K value", x_ignore = TRUE, dataset_id = i)
-})
+  })
+}
 
 knitr::include_graphics("plot/imputation_2_Kvalue.png")
 knitr::include_graphics("plot/imputation_5_Kvalue.png")
@@ -326,7 +328,13 @@ kableExtra::kable(results1$performance, caption = "Table 7: Model performances")
   kableExtra::kable_styling(full_width = FALSE, font_size = 10) |>
   kableExtra::scroll_box(width = "100%", height = "400px")
 
-plot_benchmark_results(results1$benchmark_obj)
+if (!file.exists("plot/accuracy_stability1.png")) {
+  plot_benchmark_results(results1$benchmark_obj)
+}
+
+knitr::include_graphics("plot/accuracy_stability1.png")
+knitr::include_graphics("plot/auc_stability1.png")
+knitr::include_graphics("plot/roc_curves1.png")
 
 kableExtra::kable(results1$confusion$QDA, caption = "Table 8: Confusion matrix QDA model") |>
   kableExtra::kable_styling(full_width = FALSE, font_size = 10) |>
@@ -418,7 +426,13 @@ kableExtra::kable(results1.1$performance, caption = "Table 11: Model performance
   kableExtra::kable_styling(full_width = FALSE, font_size = 10) |>
   kableExtra::scroll_box(width = "100%", height = "400px")
 
-plot_benchmark_results(results1.1$benchmark_obj)
+if (!file.exists("plot/accuracy_stability2.png")) {
+  plot_benchmark_results(results1.1$benchmark_obj)
+}
+
+knitr::include_graphics("plot/accuracy_stability2.png")
+knitr::include_graphics("plot/auc_stability2.png")
+knitr::include_graphics("plot/roc_curves2.png")
 ```
 
 To assess the model’s ability to identify premium-quality fish, the K-value threshold was lowered from 0.5 to 0.4. This more stringent definition substantially altered classification performance.
@@ -475,7 +489,13 @@ kableExtra::kable(results2$performance, caption = "Table 14: Model performances 
   kableExtra::kable_styling(full_width = FALSE, font_size = 10) |>
   kableExtra::scroll_box(width = "100%", height = "400px")
 
-plot_benchmark_results(results2$benchmark_obj)
+if (!file.exists("plot/accuracy_stability3.png")) {
+  plot_benchmark_results(results2$benchmark_obj)
+}
+
+knitr::include_graphics("plot/accuracy_stability3.png")
+knitr::include_graphics("plot/auc_stability3.png")
+knitr::include_graphics("plot/roc_curves3.png")
 ```
 
 Using principal components at the 0.4 threshold partially recovered the predictive power lost with single-wavelength models. The first 12 PCs accounted for approximately 98% of total variance, but optimal performance was achieved using only a subset of them.
@@ -564,7 +584,13 @@ kableExtra::kable(result_final$confusion_matrix, caption = "Table 17: Optimized 
 
 bmr <- as_benchmark_result(result_final$resampling_results)
 
-plot_benchmark_results(bmr)
+if (!file.exists("plot/accuracy_stability4.png")) {
+  plot_benchmark_results(results1$benchmark_obj)
+}
+
+knitr::include_graphics("plot/accuracy_stability4.png")
+knitr::include_graphics("plot/auc_stability4.png")
+knitr::include_graphics("plot/roc_curves4.png")
 ```
 
 An optimized QDA model using PCs 1, 2, 3, 4, 6, and 7 achieved the best overall performance at the 0.4 threshold. Accuracy increased to 75.7%, with an AUC of 0.748. The confusion matrix reveals a commercially relevant balance: specificity of 0.819 ensures that most samples losing premium status are correctly downgraded, while sensitivity of 0.617 reflects a conservative bias against falsely promoting borderline products.
