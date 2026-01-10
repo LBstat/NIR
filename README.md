@@ -102,5 +102,6 @@ fully collapsed.
 All analyses were conducted with careful attention to avoiding bias and data leakage. Data preprocessing
 and feature selection were fully embedded within the training pipeline using nested cross-validation.
 
-author: "Luca Bernardi"
-date: "2026-01-10"
+Author: "Luca Bernardi"
+
+Date: "2026-01-10"
